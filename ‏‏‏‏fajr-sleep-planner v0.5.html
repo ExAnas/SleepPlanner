@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>جدول دورات النوم حول صلاة الفجر</title>
+  <style>
+    :root{
+      --bg:#0f1222; --card:#171a2e; --text:#e9ecf1; --muted:#a9b1c7; --accent:#4fd1c5;
+      --danger:#ff6b6b; --ok:#90ee90; --shadow:0 10px 30px rgba(0,0,0,.35); --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0}
+    body{
+      display:grid; place-items:center;
+      background:
+        radial-gradient(1000px 500px at 100% -20%, #1a1e36 0%, transparent 60%),
+        radial-gradient(800px 400px at -10% 110%, #1b2540 0%, transparent 60%),
+        var(--bg);
+      color:var(--text); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif;
+      line-height:1.6; padding:24px;
+    }
+    .container{width:min(1100px,100%)} /* كبرنا العرض */
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), transparent 25%), var(--card); border:1px solid rgba(255,255,255,.06); border-radius:var(--radius); box-shadow:var(--shadow); padding:22px}
+    header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:6px}
+    .title{font-size:clamp(20px,4vw,28px); font-weight:800}
+    .subtitle{color:var(--muted); font-size:14px}
+    .grid{display:grid; gap:14px}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .badge{display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.08); color:var(--text); padding:8px 12px; border-radius:999px; font-size:12px}
+    .section{background: rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:12px; padding:16px}
+    label{font-weight:700}
+    input[type="time"], input[type="number"]{
+      background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); color:var(--text); padding:10px 12px; border-radius:10px; font-family:inherit; font-size:14px;
+    }
+
+    /* الأزرار (الحبوب) */
+    .pills{display:flex; gap:8px; flex-wrap:wrap}
+    .pill{
+      user-select:none; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15);
+      padding:8px 12px; border-radius:999px; cursor:pointer; font-weight:700; color:#fff;
+    }
+    .pill[aria-pressed="true"]{ outline:2px solid var(--accent); background:rgba(79,209,197,.12); color:#fff; }
+
+    .muted{color:var(--muted)}
+    .btn-primary{
+      background:linear-gradient(180deg, rgba(79,209,197,.25), rgba(79,209,197,.15));
+      border:1px solid rgba(79,209,197,.5);
+      padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:800; font-size:16px; color:#fff;
+    }
+    .btn-primary:active{transform:translateY(1px)}
+    .center{display:grid; place-items:center; text-align:center}
+    .result{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+    .result .box{background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px}
+    .ok{color:var(--ok)} .danger{color:var(--danger)}
+    .hint{font-size:12px; color:var(--muted)}
+    .big{font-size:clamp(22px,4vw,30px); font-weight:900}
+    .small{font-size:12px}
+    @media (max-width:820px){.result{grid-template-columns:1fr}}
+
+    /* نصوص الشرح تحت الأزرار */
+    .cycle-info, #previewBefore, #previewAfter { color:#fff; }
+
+    /* صف قبل الفجر/بعد الفجر دايمًا جنب بعض */
+    .two-cols{display:flex; gap:16px; align-items:flex-start}
+    .two-cols > div{flex:1; min-width:0}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <header>
+        <div>
+          <div class="title">جدول دورات النوم حول صلاة الفجر</div>
+          <div id="subtitle" class="subtitle">جاري تحديد الموقع وجلب وقت الفجر…</div>
+        </div>
+        <div class="row">
+          <span id="todayBadge" class="badge">اليوم: —</span>
+          <span id="tzBadge" class="badge">المنطقة الزمنية: —</span>
+        </div>
+      </header>
+
+      <div class="grid">
+        <!-- إعدادات عامة -->
+        <div class="section">
+          <div class="row" style="justify-content:space-between; gap:16px">
+            <div class="row" style="gap:12px; flex:1">
+              <label for="fajrTime">وقت الفجر</label>
+              <input id="fajrTime" type="time" step="60" />
+              <span id="autoNote" class="hint" style="display:none;margin-inline-start:8px;max-width:520px"></span>
+            </div>
+            <div class="row" style="gap:12px">
+              <label for="gapAfter">فاصل ما بعد الصلاة (دقائق)</label>
+              <input id="gapAfter" type="number" min="0" max="120" value="30" style="width:90px"/>
+              <span class="hint">مثال: 30 دقيقة للوضوء والأذكار</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- اختيار عدد الدورات -->
+        <div class="section">
+          <div class="two-cols">
+            <div>
+              <label>قبل الفجر</label>
+              <div id="pillsBefore" class="pills" role="group" aria-label="عدد الدورات قبل الفجر"></div>
+              <div id="previewBefore" class="hint cycle-info" style="margin-top:6px">—</div>
+            </div>
+            <div>
+              <label>بعد الفجر</label>
+              <div id="pillsAfter" class="pills" role="group" aria-label="عدد الدورات بعد الفجر"></div>
+              <div id="previewAfter" class="hint cycle-info" style="margin-top:6px">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="center" style="margin-top:4px">
+          <button id="buildBtn" class="btn-primary">سَوِّ جدولك الآن</button>
+        </div>
+
+        <!-- النتائج -->
+        <div id="results" class="section" style="display:none">
+          <div class="center" style="margin-bottom:8px">
+            <div class="big">خطتك لليلة/صباح الصلاة</div>
+            <div id="totalLabel" class="small">—</div>
+          </div>
+          <div class="result">
+            <div class="box">
+              <b>قبل الفجر</b>
+              <div id="beforeLine" class="muted">—</div>
+            </div>
+            <div class="box">
+              <b>بعد الفجر</b>
+              <div id="afterLine" class="muted">—</div>
+            </div>
+          </div>
+          <div id="advice" class="center" style="margin-top:10px"></div>
+        </div>
+      </div>
+
+      <footer style="margin-top:16px; text-align:center; color:var(--muted); font-size:12px">
+        طول الدورة محسوب = 90 دقيقة. الأفضل إكمال عدد صحيح من الدورات ثم الاستيقاظ.
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    // ===== Helpers =====
+    const cycleMin = 90; // دقيقة
+    const todayBadge = document.getElementById('todayBadge');
+    const tzBadge = document.getElementById('tzBadge');
+    const subtitleEl = document.getElementById('subtitle');
+
+    function pad(n){return String(n).padStart(2,'0')}
+    function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
+    function addMin(date, m){ return new Date(date.getTime() + m*60000) }
+    function subMin(date, m){ return new Date(date.getTime() - m*60000) }
+
+    function makeTodayAt(hhmm){
+      const [h,m] = (hhmm||'').split(':').map(Number);
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h||0, m||0, 0);
+    }
+
+    function humanSpan(start, end){
+      const startD = new Date(start), endD = new Date(end);
+      let startTag = '', endTag = '';
+      const today = new Date(); today.setHours(0,0,0,0);
+      const sBase = new Date(startD); sBase.setHours(0,0,0,0);
+      const eBase = new Date(endD);   eBase.setHours(0,0,0,0);
+      const diffS = Math.round((sBase - today)/86400000);
+      const diffE = Math.round((eBase - today)/86400000);
+      if (diffS < 0) startTag = ' (اليوم السابق)';
+      if (diffS > 0) startTag = ' (اليوم التالي)';
+      if (diffE < 0) endTag   = ' (اليوم السابق)';
+      if (diffE > 0) endTag   = ' (اليوم التالي)';
+      return `${fmt(start)}${startTag} → ${fmt(end)}${endTag}`;
+    }
+
+    // ---- Arabic pluralization helpers ----
+    function countWithWord(n){
+      if (n === 0) return '0 دورات';
+      if (n === 1) return 'دورة واحدة';
+      if (n === 2) return 'دورتان';
+      return `${n} دورات`;
+    }
+    function pillText(n){
+      if (n === 0) return 'بدون';
+      if (n === 1) return 'دورة';
+      if (n === 2) return 'دورتان';
+      return `${n} دورات`;
+    }
+    function hoursWord(h){
+      if (h === 1) return 'ساعة واحدة';
+      if (h === 2) return 'ساعتان';
+      if (h >= 3 && h <= 10) return `${h} ساعات`;
+      return `${h} ساعة`;
+    }
+
+    // ===== UI Setup =====
+    const fajrTime = document.getElementById('fajrTime');
+    const gapAfter = document.getElementById('gapAfter');
+    const pillsBefore = document.getElementById('pillsBefore');
+    const pillsAfter = document.getElementById('pillsAfter');
+    const previewBefore = document.getElementById('previewBefore');
+    const previewAfter = document.getElementById('previewAfter');
+
+    const buildBtn = document.getElementById('buildBtn');
+    const results = document.getElementById('results');
+    const beforeLine = document.getElementById('beforeLine');
+    const afterLine = document.getElementById('afterLine');
+    const totalLbl = document.getElementById('totalLabel');
+    const advice = document.getElementById('advice');
+    const autoNote = document.getElementById('autoNote');
+
+    let cBefore = 2; // default
+    let cAfter  = 2; // default
+
+    function renderPills(container, current, onPick){
+      container.innerHTML='';
+      const options = [0,1,2,3,4,5];
+      options.forEach(n=>{
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pill';
+        b.setAttribute('aria-pressed', String(n===current));
+        b.textContent = pillText(n);
+        b.onclick = ()=>{ onPick(n) };
+        container.appendChild(b);
+      });
+    }
+    function updatePills(){
+      renderPills(pillsBefore, cBefore, (n)=>{ cBefore=n; updatePills(); updatePreviews(); });
+      renderPills(pillsAfter,  cAfter,  (n)=>{ cAfter=n;  updatePills(); updatePreviews(); });
+    }
+
+    function ensureFajrDefault(){ if (!fajrTime.value){ fajrTime.value = '04:15'; } }
+
+    function updatePreviews(){
+      ensureFajrDefault();
+      const fajr = makeTodayAt(fajrTime.value || '04:15');
+      const gap  = Number(gapAfter.value)||0;
+
+      // قبل الفجر
+      const oneStart = subMin(fajr, 1*cycleMin);
+      const twoStart = subMin(fajr, 2*cycleMin);
+      previewBefore.textContent =
+        `إن اخترت دورة واحدة قبل الفجر فستنـام من ${fmt(oneStart)} حتى ${fmt(fajr)} (يكون الاستيقاظ عند ${fmt(fajr)}). ` +
+        `وإن اخترت دورتين فستنـام من ${fmt(twoStart)} حتى ${fmt(fajr)}.`;
+
+      // بعد الفجر
+      const afterStart = addMin(fajr, gap);
+      const after1End = addMin(afterStart, 1*cycleMin);
+      const after2End = addMin(afterStart, 2*cycleMin);
+      previewAfter.textContent =
+        `إن اخترت دورة واحدة بعد الفجر فستنـام من ${fmt(afterStart)} حتى ${fmt(after1End)} (يكون الاستيقاظ عند ${fmt(after1End)}). ` +
+        `وإن اخترت دورتين فستنـام من ${fmt(afterStart)} حتى ${fmt(after2End)}.`;
+    }
+
+    function totalLabel(cBefore, cAfter){
+      const totalMin = (cBefore + cAfter) * cycleMin;
+      const h = Math.floor(totalMin/60), m = totalMin%60;
+      const hoursTxt = hoursWord(h) + (m ? ` و${m} دقيقة` : '');
+      return {text:`إجمالي النوم: ${hoursTxt} (${countWithWord(cBefore + cAfter)})`, totalMin};
+    }
+
+    function buildPlan(){
+      ensureFajrDefault();
+      const fajr = makeTodayAt(fajrTime.value || '04:15');
+      const gap  = Number(gapAfter.value)||0;
+
+      // قبل الفجر
+      let beforeText = '—';
+      if (cBefore>0){
+        const start = subMin(fajr, cBefore*cycleMin);
+        beforeText = humanSpan(start, fajr) + ` (${countWithWord(cBefore)})`;
+      } else {
+        beforeText = 'لا يوجد نوم قبل الفجر';
+      }
+
+      // بعد الفجر
+      let afterText = '—';
+      if (cAfter>0){
+        const startA = addMin(fajr, gap);
+        const endA   = addMin(startA, cAfter*cycleMin);
+        afterText = humanSpan(startA, endA) + ` (${countWithWord(cAfter)})`;
+      } else {
+        afterText = 'لا يوجد نوم بعد الفجر';
+      }
+
+      beforeLine.textContent = beforeText;
+      afterLine.textContent = afterText;
+      results.style.display = 'block';
+
+      const t = totalLabel(cBefore, cAfter);
+      totalLbl.textContent = t.text;
+
+      // تنسيقات ونصائح
+      totalLbl.classList.remove('danger','ok');
+      advice.innerHTML = '';
+
+      if (t.totalMin <= 360){ // 6 ساعات أو أقل
+        totalLbl.classList.add('danger');
+        advice.innerHTML = `<div class="danger"><b>تنبيه:</b> ننصحك أن تنام أكثر!</div>`;
+      } else if (t.totalMin >= 420){ // 7 ساعات أو أكثر
+        totalLbl.classList.add('ok');
+        advice.textContent = 'نوم العوافي!';
+      }
+    }
+
+    // ===== جلب وقت الفجر تلقائيًا من Aladhan =====
+    function sanitizeFajr(str){ const m = (str||'').match(/(\d{1,2}):(\d{2})/); return m ? `${m[1].padStart(2,'0')}:${m[2]}` : ''; }
+
+    async function fetchFajrByCoords(lat, lon){
+      const url = `https://api.aladhan.com/v1/timings?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&method=4&school=0`;
+      const res = await fetch(url); if(!res.ok) throw new Error('HTTP');
+      const json = await res.json(); if(json.code !== 200) throw new Error('API'); return json.data;
+    }
+    async function fetchFajrByCity(city='Riyadh', country='Saudi Arabia'){
+      const url = `https://api.aladhan.com/v1/timingsByCity?city=${encodeURIComponent(city)}&country=${encodeURIComponent(country)}&method=4&school=0`;
+      const res = await fetch(url); if(!res.ok) throw new Error('HTTP');
+      const json = await res.json(); if(json.code !== 200) throw new Error('API'); return json.data;
+    }
+
+    async function setFajrAutomatically(){
+      subtitleEl.textContent = 'جاري تحديد الموقع وجلب وقت الفجر…';
+      let data = null;
+      let sourceNote = '';
+
+      if ('geolocation' in navigator){
+        try{
+          const pos = await new Promise((resolve, reject)=>{
+            navigator.geolocation.getCurrentPosition(resolve, reject, {enableHighAccuracy:true, timeout:10000});
+          });
+          const {latitude, longitude} = pos.coords;
+          data = await fetchFajrByCoords(latitude, longitude);
+          sourceNote = `تم ضبط وقت الفجر تلقائيًا حسب موقعك (${latitude.toFixed(2)}, ${longitude.toFixed(2)}).`;
+          subtitleEl.textContent = 'تم جلب وقت الفجر حسب موقعك.';
+        }catch(e){
+          // fallback للرياض
+        }
+      }
+      if (!data){
+        try{
+          data = await fetchFajrByCity('Riyadh','Saudi Arabia');
+          sourceNote = 'تم ضبط وقت الفجر تلقائيًا (مدينة: الرياض).';
+          subtitleEl.textContent = 'تم جلب وقت الفجر تلقائيًا (الرياض).';
+        }catch(e){
+          subtitleEl.textContent = 'تعذّر جلب وقت الفجر تلقائيًا؛ أدخله يدويًا.';
+        }
+      }
+
+      if (data){
+        const fajr = sanitizeFajr(data.timings?.Fajr);
+        if (fajr){
+          fajrTime.value = fajr;
+          tzBadge.textContent = `المنطقة الزمنية: ${data.meta?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
+          autoNote.style.display = 'inline';
+          autoNote.textContent = `${sourceNote} (المصدر: Aladhan).`;
+          updatePreviews();
+        }
+      }
+    }
+
+    // Events
+    buildBtn.addEventListener('click', buildPlan);
+    fajrTime.addEventListener('input', updatePreviews);
+    gapAfter.addEventListener('input', updatePreviews);
+
+    // Init
+    (function init(){
+      const f = new Intl.DateTimeFormat('ar-SA',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+      todayBadge.textContent = `اليوم: ${f.format(new Date())}`;
+      tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
+      updatePills();
+      updatePreviews();
+      setFajrAutomatically(); // شغّل الجلب التلقائي
+    })();
+  </script>
+</body>
+</html>
