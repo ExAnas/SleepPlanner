@@ -24,14 +24,14 @@
       color:var(--text);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif;
       line-height:1.6; padding:24px;
-      font-size:1.1rem;               /* تكبير عام */
+      font-size:1.1rem;
     }
 
     .container{width:min(1100px,100%)}
 
     .card{
       background:var(--card);
-      border:none;                     /* بدون إطار */
+      border:none;
       border-radius:var(--radius);
       padding:22px;
     }
@@ -46,23 +46,23 @@
     .badge{
       display:inline-flex; align-items:center; gap:6px;
       background:var(--box);
-      border:none;                     /* بدون إطار */
+      border:none;
       color:var(--text); padding:8px 12px; border-radius:999px; font-size:13px
     }
 
     .section{
       background:var(--box);
-      border:none;                     /* بدون إطار */
+      border:none;
       border-radius:12px; padding:16px
     }
 
     label{font-weight:700; font-size:1rem}
-    input[type="time"], input[type="number"]{
-      background: var(--box); border:none; color:var(--text);  /* بدون إطار */
+    input[type="time"], input[type="number"], select{
+      background: var(--box); border:none; color:var(--text);
       padding:10px 12px; border-radius:10px; font-family:inherit; font-size:1rem;
     }
 
-    /* الأزرار (بدون تدرّج ولا ظل ولا إطار) */
+    /* الأزرار */
     .btn-primary{
       background:var(--accent); border:none;
       padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:800; font-size:1rem; color:#071b10;
@@ -78,13 +78,13 @@
     /* الحبوب */
     .pills{display:flex; gap:8px; flex-wrap:wrap}
     .pill{
-      user-select:none; background:var(--box); border:none;   /* بدون إطار */
+      user-select:none; background:var(--box); border:none;
       padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:700; color:#fff;
       font-size:1rem;
     }
     .pill[aria-pressed="true"]{
       background:rgba(79,209,197,.12);
-      outline:2px solid var(--accent); /* تمييز نظيف بدل الحدود البيضاء */
+      outline:2px solid var(--accent);
       color:#fff;
     }
 
@@ -94,7 +94,7 @@
     .result{display:grid; grid-template-columns:1fr 1fr; gap:12px}
     .result .box{
       background: var(--card);
-      border:none;                     /* بدون إطار */
+      border:none;
       border-radius:12px; padding:14px
     }
 
@@ -121,8 +121,8 @@
       background:var(--card);
       border:none;
       border-radius:var(--radius);
-      width:min(900px, 96%);            /* توسعة النافذة */
-      padding:24px 24px 18px 24px;      /* حشوة أكبر */
+      width:min(900px, 96%);
+      padding:24px 24px 18px 24px;
       color:var(--text);
       font-size:1.05rem;
       line-height:1.7;
@@ -150,6 +150,7 @@
         <div class="row">
           <span id="todayBadge" class="badge">اليوم: —</span>
           <span id="tzBadge" class="badge">المنطقة الزمنية: —</span>
+          <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
         </div>
       </header>
 
@@ -163,6 +164,18 @@
               <button id="autoResetBtn" class="btn-small" type="button" title="إعادة الضبط تلقائيًا">إعادة الضبط تلقائيًا</button>
               <span id="autoNote" class="hint" style="display:none;margin-inline-start:8px;max-width:520px"></span>
             </div>
+
+            <!-- اختيار مدة الدورة -->
+            <div class="row" style="gap:12px">
+              <label for="cycleLength">مدة الدورة (دقائق)</label>
+              <select id="cycleLength">
+                <option value="90" selected>90 دقيقة</option>
+                <option value="100">100 دقيقة</option>
+                <option value="110">110 دقيقة</option>
+              </select>
+              <span class="hint">اختر 90 أو 100 أو 110</span>
+            </div>
+
             <div class="row" style="gap:12px">
               <label for="gapAfter">فاصل ما بعد الصلاة (دقائق)</label>
               <input id="gapAfter" type="number" min="0" max="120" value="30" style="width:90px"/>
@@ -208,17 +221,19 @@
       </div>
 
       <footer style="margin-top:16px; text-align:center; color:var(--muted); font-size:0.95rem">
-        طول الدورة محسوب = 90 دقيقة. الأفضل إكمال عدد صحيح من الدورات ثم الاستيقاظ.
+        <span id="footerCycle">طول الدورة الحالي = 90 دقيقة.</span> الأفضل إكمال عدد صحيح من الدورات ثم الاستيقاظ.
       </footer>
     </div>
   </div>
 
   <script>
     // ===== Helpers =====
-    const cycleMin = 90; // دقيقة
+    let cycleMin = 90; // تتغير حسب الاختيار
     const todayBadge = document.getElementById('todayBadge');
     const tzBadge = document.getElementById('tzBadge');
     const subtitleEl = document.getElementById('subtitle');
+    const cycleBadge = document.getElementById('cycleBadge');
+    const footerCycle = document.getElementById('footerCycle');
 
     function pad(n){return String(n).padStart(2,'0')}
     function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
@@ -267,6 +282,7 @@
     // ===== UI Setup =====
     const fajrTime = document.getElementById('fajrTime');
     const gapAfter = document.getElementById('gapAfter');
+    const cycleLengthSelect = document.getElementById('cycleLength');
     const pillsBefore = document.getElementById('pillsBefore');
     const pillsAfter = document.getElementById('pillsAfter');
     const previewBefore = document.getElementById('previewBefore');
@@ -457,6 +473,14 @@
       }
     }
 
+    // ===== تغيير مدة الدورة (90/100/110) =====
+    function updateCycleUI(){
+      const val = Number(cycleLengthSelect.value);
+      cycleMin = val;
+      cycleBadge.textContent = `مدة الدورة: ${val} دقيقة`;
+      footerCycle.textContent = `طول الدورة الحالي = ${val} دقيقة.`;
+    }
+
     // ===== Tutorial (Dynamic multi-step) =====
     const tutorialOverlay = document.getElementById('tutorialOverlay');
     const tutorialCard    = document.getElementById('tutorialCard');
@@ -464,35 +488,27 @@
     const learnSlides = [
       {
         t: 'وش يعني «دورة نوم»؟',
-        c: `النوم ما هو خط واحد. هو يجي على دورات، كل دورة تقريبًا <b>٩٠ دقيقة</b>.
+        c: `النوم يجي على دورات، والدورة عادة بين <b>٩٠–١١٠ دقيقة</b>.
             في الدورة الوحدة جسمك يمر بمراحل خفيفة، أعمق، ثم مرحلة الأحلام (REM).
             أفضل شي تصحى <b>بنهاية</b> دورة، عشان ما تقطع نومك بوسط المرحلة العميقة.`
       },
       {
-        t: 'ليه نهتم بالـ٩٠ دقيقة؟',
-        c: `لأنك لو قمت بوسط النوم العميق، بتقوم ثقيل ومودّك تكمل نوم.
-            بس لو قمت بنهاية الدورة، تصحى أخف وأسهل حتى لو مجموع ساعاتك أقلّ شوي.`
+        t: 'ليه نهتم بمدة الدورة؟',
+        c: `لو قمت بوسط النوم العميق، بتقوم ثقيل. لذلك نخلي التطبيق يبني الخطة حسب مدة الدورة اللي تختارها
+            (٩٠ أو ١٠٠ أو ١١٠ دقيقة) عشان تصحى على نهاية دورة.`
       },
       {
         t: 'كيف نركّبها مع صلاة الفجر؟',
         c: `نخطّط عدد الدورات <b>قبل</b> الفجر، وممكن نكمّل دورات <b>بعد</b> الصلاة.
-            الهدف: تقوم للصلاة في وقتها، وتكمل نومك على نهايات دورات مرتّبة.`
-      },
-      {
-        t: 'نصايح سريعة',
-        c: `<ul style="margin:6px 0 0 0;padding-inline-start:18px">
-              <li>الدورة ≈ ٩٠ دقيقة (قد تختلف دقائق بسيطة بين الناس).</li>
-              <li>خلّ بين الصلاة والنوم بعد الصلاة <b>فاصل</b> للوضوء والأذكار.</li>
-              <li>إذا كان مجموع نومك ≤ ٦ ساعات، حاول تزود دورة لو تقدر.</li>
-            </ul>`
+            غيّر مدة الدورة من الإعدادات وبتتحدّث الأوقات تلقائيًا.`
       },
       {
         t: 'التعليمات السريعة',
         c: `<ol style="margin:6px 0 0 0;padding-inline-start:22px">
               <li><b>وقت الفجر:</b> نحدده تلقائيًا حسب موقعك، وقدر تغيّره يدويًا.</li>
-              <li><b>الفاصل بعد الصلاة:</b> اختر الدقائق اللازمة بعد الصلاة.</li>
-              <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر عدد الدورات (الدورة ≈ ٩٠ دقيقة).</li>
-              <li>الخطة تتحدّث تلقائيًا مع أي تغيير.</li>
+              <li><b>مدة الدورة:</b> اختر ٩٠/١٠٠/١١٠ دقيقة.</li>
+              <li><b>الفاصل بعد الصلاة:</b> اختر دقائق الوضوء والأذكار.</li>
+              <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر العدد، والخطة تتحدّث فورًا.</li>
               <li>لو <b>إجمالي النوم ≤ ٦ ساعات</b> بيظهر تنبيه باللون الأحمر.</li>
             </ol>`,
         final: true
@@ -601,6 +617,10 @@
     fajrTime.addEventListener('input', autoUpdate);
     gapAfter.addEventListener('input', autoUpdate);
     autoResetBtn.addEventListener('click', setFajrAutomatically);
+    cycleLengthSelect.addEventListener('change', ()=>{
+      updateCycleUI();
+      autoUpdate();
+    });
 
     // Init
     (function init(){
@@ -609,6 +629,7 @@
 
       tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
       updatePills();
+      updateCycleUI();   // ضبط الشارات والفوتر حسب مدة الدورة الحالية
       autoUpdate();      // إظهار/إخفاء النتائج حسب الحالة
       setFajrAutomatically();
       openTutorial();
