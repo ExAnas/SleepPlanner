@@ -73,6 +73,7 @@
     }
     .btn-small{padding:8px 10px; font-size:0.95rem}
     .btn-primary:active,.btn-secondary:active,.btn-small:active{transform:translateY(1px)}
+    .btn-secondary[disabled]{opacity:.5; cursor:not-allowed}
 
     /* الحبوب */
     .pills{display:flex; gap:8px; flex-wrap:wrap}
@@ -107,7 +108,7 @@
     .two-cols{display:flex; gap:16px; align-items:flex-start}
     .two-cols > div{flex:1; min-width:0}
 
-    /* نافذة التعليمات (بدون ظل/تدرّج) */
+    /* ————— نافذة التعليمات (مكبّرة وديناميكية) ————— */
     .tutorial-overlay{
       position:fixed; inset:0;
       background:rgba(15,18,34,.55);
@@ -118,40 +119,25 @@
     }
     .tutorial{
       background:var(--card);
-      border:none;                     /* بدون إطار */
+      border:none;
       border-radius:var(--radius);
-      width:min(760px, 92%); padding:18px 18px 14px 18px; color:var(--text);
-      font-size:1rem;
+      width:min(900px, 96%);            /* توسعة النافذة */
+      padding:24px 24px 18px 24px;      /* حشوة أكبر */
+      color:var(--text);
+      font-size:1.05rem;
+      line-height:1.7;
     }
-    .tutorial h2{margin:0 0 6px 0; font-size:clamp(20px,3.3vw,24px); font-weight:800}
-    .tutorial p{margin:0 0 8px 0; color:var(--muted)}
-    .tutorial ol{margin:8px 0 0 0; padding-inline-start:22px}
-    .tutorial li{margin:6px 0}
-    .tutorial .row-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px}
-    .tutorial label.small{font-size:13px; color:var(--muted); display:flex; align-items:center; gap:6px}
+    .tutorial h2{margin:0 0 10px 0; font-size:clamp(22px,3.5vw,26px); font-weight:800}
+    .tutorial p{margin:0 0 10px 0; color:var(--muted)}
+    .tutorial .row-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px}
+    .tutorial .nav{display:flex; gap:8px}
+    .tutorial .hint{font-size:.95rem; color:var(--muted)}
   </style>
 </head>
 <body>
-  <!-- نافذة تعليمات -->
+  <!-- نافذة تعليمات ديناميكية -->
   <div id="tutorialOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
-    <div class="tutorial">
-      <h2 id="tutorialTitle">شرح سريع قبل البدء</h2>
-      <p>اتبع الخطوات التالية لإعداد خطة نومك حول صلاة الفجر:</p>
-      <ol>
-        <li><b>وقت الفجر:</b> نحدده تلقائيًا حسب موقعك. عدّل الوقت يدويًا إن احتجت.</li>
-        <li><b>الفاصل بعد الصلاة:</b> اختر الدقائق اللازمة بعد الصلاة (وضوء، أذكار…)</li>
-        <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر عدد دورات النوم (الدورة ≈ ٩٠ دقيقة).</li>
-        <li>ستُحدَّث الخطة تلقائيًا عند أي تغيير.</li>
-        <li>إذا كان <b>إجمالي النوم ٦ ساعات أو أقل</b> سيظهر بالأحمر مع تنبيه بزيادة النوم.</li>
-      </ol>
-      <div class="row-actions">
-        <label class="small"><input type="checkbox" id="dontShow"> لا تُظهر هذه التعليمات مرة أخرى</label>
-        <div style="display:flex; gap:8px">
-          <button id="laterBtn" class="btn-secondary" type="button">لاحقًا</button>
-          <button id="startBtn" class="btn-primary" type="button">ابدأ الآن</button>
-        </div>
-      </div>
-    </div>
+    <div class="tutorial" id="tutorialCard"><!-- يُملأ بالـ JS --></div>
   </div>
 
   <div class="container">
@@ -471,24 +457,144 @@
       }
     }
 
-    // ===== Tutorial overlay control =====
+    // ===== Tutorial (Dynamic multi-step) =====
     const tutorialOverlay = document.getElementById('tutorialOverlay');
-    const startBtn = document.getElementById('startBtn');
-    const laterBtn = document.getElementById('laterBtn');
-    const dontShow = document.getElementById('dontShow');
+    const tutorialCard    = document.getElementById('tutorialCard');
+
+    const learnSlides = [
+      {
+        t: 'وش يعني «دورة نوم»؟',
+        c: `النوم ما هو خط واحد. هو يجي على دورات، كل دورة تقريبًا <b>٩٠ دقيقة</b>.
+            في الدورة الوحدة جسمك يمر بمراحل خفيفة، أعمق، ثم مرحلة الأحلام (REM).
+            أفضل شي تصحى <b>بنهاية</b> دورة، عشان ما تقطع نومك بوسط المرحلة العميقة.`
+      },
+      {
+        t: 'ليه نهتم بالـ٩٠ دقيقة؟',
+        c: `لأنك لو قمت بوسط النوم العميق، بتقوم ثقيل ومودّك تكمل نوم.
+            بس لو قمت بنهاية الدورة، تصحى أخف وأسهل حتى لو مجموع ساعاتك أقلّ شوي.`
+      },
+      {
+        t: 'كيف نركّبها مع صلاة الفجر؟',
+        c: `نخطّط عدد الدورات <b>قبل</b> الفجر، وممكن نكمّل دورات <b>بعد</b> الصلاة.
+            الهدف: تقوم للصلاة في وقتها، وتكمل نومك على نهايات دورات مرتّبة.`
+      },
+      {
+        t: 'نصايح سريعة',
+        c: `<ul style="margin:6px 0 0 0;padding-inline-start:18px">
+              <li>الدورة ≈ ٩٠ دقيقة (قد تختلف دقائق بسيطة بين الناس).</li>
+              <li>خلّ بين الصلاة والنوم بعد الصلاة <b>فاصل</b> للوضوء والأذكار.</li>
+              <li>إذا كان مجموع نومك ≤ ٦ ساعات، حاول تزود دورة لو تقدر.</li>
+            </ul>`
+      },
+      {
+        t: 'التعليمات السريعة',
+        c: `<ol style="margin:6px 0 0 0;padding-inline-start:22px">
+              <li><b>وقت الفجر:</b> نحدده تلقائيًا حسب موقعك، وقدر تغيّره يدويًا.</li>
+              <li><b>الفاصل بعد الصلاة:</b> اختر الدقائق اللازمة بعد الصلاة.</li>
+              <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر عدد الدورات (الدورة ≈ ٩٠ دقيقة).</li>
+              <li>الخطة تتحدّث تلقائيًا مع أي تغيير.</li>
+              <li>لو <b>إجمالي النوم ≤ ٦ ساعات</b> بيظهر تنبيه باللون الأحمر.</li>
+            </ol>`,
+        final: true
+      }
+    ];
+
+    const tutorialState = {
+      mode: 'question', // 'question' | 'learn' | 'direct'
+      step: 0
+    };
+
+    function renderTutorial(){
+      let html = '';
+      if (tutorialState.mode === 'question'){
+        html = `
+          <h2 id="tutorialTitle">تعرف وش تعني «دورة النوم»؟</h2>
+          <p>ودّك نعرّفك عليها بسرعة قبل نبدأ ولا أمورك واضحة؟</p>
+          <div class="row-actions">
+            <label class="small"><input type="checkbox" id="dontShow"> لا تُظهر هذه التعليمات مرة أخرى</label>
+            <div class="nav">
+              <button id="yesBtn"  class="btn-secondary" type="button">نعم، واضح</button>
+              <button id="noBtn"   class="btn-primary"   type="button">لا، علّمني</button>
+            </div>
+          </div>`;
+      } else {
+        const s = learnSlides[tutorialState.step];
+        const isFirst = tutorialState.step === 0;
+        const isFinal = !!s.final || tutorialState.step === learnSlides.length - 1;
+
+        html = `
+          <h2 id="tutorialTitle">${s.t}</h2>
+          <div class="hint">${s.c}</div>
+          <div class="row-actions">
+            <label class="small"><input type="checkbox" id="dontShow"> لا تُظهر هذه التعليمات مرة أخرى</label>
+            <div class="nav">
+              <button id="prevBtn" class="btn-secondary" type="button" ${isFirst?'disabled':''}>السابق</button>
+              <button id="nextBtn" class="btn-primary"   type="button">${isFinal?'ابدأ الآن':'التالي'}</button>
+            </div>
+          </div>`;
+      }
+
+      tutorialCard.innerHTML = html;
+
+      // wire events
+      const dontShow = document.getElementById('dontShow');
+      if (dontShow) dontShow.checked = (localStorage.getItem('hideTutorial') === '1');
+
+      const yesBtn  = document.getElementById('yesBtn');
+      const noBtn   = document.getElementById('noBtn');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+
+      if (yesBtn){
+        yesBtn.onclick = ()=>{
+          tutorialState.mode = 'direct';
+          // نعرض خطوة "التعليمات السريعة" مباشرة
+          tutorialState.step = learnSlides.findIndex(s=>s.final);
+          if (tutorialState.step < 0) tutorialState.step = learnSlides.length-1;
+          renderTutorial();
+        };
+      }
+      if (noBtn){
+        noBtn.onclick = ()=>{
+          tutorialState.mode = 'learn';
+          tutorialState.step = 0;
+          renderTutorial();
+        };
+      }
+      if (prevBtn){
+        prevBtn.onclick = ()=>{
+          if (tutorialState.step>0){ tutorialState.step--; renderTutorial(); }
+        };
+      }
+      if (nextBtn){
+        nextBtn.onclick = ()=>{
+          const isFinal = (tutorialState.mode !== 'question') &&
+                          (tutorialState.step >= learnSlides.length-1 || learnSlides[tutorialState.step].final);
+          if (isFinal){
+            if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
+            closeTutorial();
+          }else{
+            tutorialState.step = Math.min(learnSlides.length-1, tutorialState.step+1);
+            renderTutorial();
+          }
+        };
+      }
+    }
 
     function openTutorial(){
       if (localStorage.getItem('hideTutorial') === '1') return;
+      tutorialState.mode = 'question'; tutorialState.step = 0;
       tutorialOverlay.style.display = 'flex';
       document.body.style.overflow = 'hidden';
+      renderTutorial();
     }
     function closeTutorial(){
       tutorialOverlay.style.display = 'none';
       document.body.style.overflow = '';
-      if (dontShow.checked) localStorage.setItem('hideTutorial','1');
+      const dontShow = document.getElementById('dontShow');
+      if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
     }
-    startBtn.addEventListener('click', closeTutorial);
-    laterBtn.addEventListener('click', closeTutorial);
+    // إغلاق بالضغط على الخلفية
     tutorialOverlay.addEventListener('click', (e)=>{ if(e.target === tutorialOverlay) closeTutorial(); });
 
     // Events (تحديث تلقائي)
