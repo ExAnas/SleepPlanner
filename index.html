@@ -94,6 +94,8 @@
           <span id="tzBadge" class="badge">المنطقة الزمنية: —</span>
           <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
           <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span>
+          <!-- آخر حفظ (ثابت في الهيدر) -->
+          <span id="lastSavedHeader" class="subtitle small" style="margin-inline-start:8px">—</span>
         </div>
       </header>
 
@@ -131,7 +133,7 @@
             </div>
           </div>
 
-          <!-- ملاحظة الحفظ التلقائي -->
+          <!-- ملاحظة الحفظ التلقائي (تظهر وتختفي) -->
           <div class="row" style="justify-content:flex-end; gap:10px; margin-top:10px">
             <span id="saveNote" class="hint" style="display:none"></span>
           </div>
@@ -188,6 +190,7 @@
     const cycleBadge = document.getElementById('cycleBadge');
     const footerCycle = document.getElementById('footerCycle');
     const wakeBadge = document.getElementById('wakeBadge');
+    const lastSavedHeader = document.getElementById('lastSavedHeader');
 
     function pad(n){return String(n).padStart(2,'0')}
     function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
@@ -251,15 +254,15 @@
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
 
-    const saveNote = document.getElementById('saveNote');      // ملاحظة الحفظ
-    const STORAGE_KEY = 'sleepFajrPrefs.v1';                   // التخزين المحلي
+    const saveNote = document.getElementById('saveNote');      // ملاحظة الحفظ (تظهر/تختفي)
+    const STORAGE_KEY = 'sleepFajrPrefs.v1';
 
     let cBefore = 0;
     let cAfter  = 0;
 
     // ===== حفظ تلقائي =====
     const SAVE_DEBOUNCE_MS = 800;
-    const SAVE_NOTE_HIDE_MS = 5000; // إخفاء الرسالة بعد 5 ثوانٍ
+    const SAVE_NOTE_HIDE_MS = 5000; // 5 ثوانٍ
     let saveTimer = null;
     let hideNoteTimer = null;
     let IS_RESTORING = false;
@@ -273,6 +276,12 @@
       }catch{ return '—'; }
     }
 
+    function setLastSavedHeader(ts){
+      if (!lastSavedHeader) return;
+      if (!ts){ lastSavedHeader.textContent = '—'; return; }
+      lastSavedHeader.textContent = `آخر حفظ: ${formatDateTime(ts)}`;
+    }
+
     function showSavingNote(){
       if (!saveNote) return;
       if (hideNoteTimer){ clearTimeout(hideNoteTimer); hideNoteTimer = null; }
@@ -284,6 +293,9 @@
       const when = ts ? formatDateTime(ts) : '';
       saveNote.style.display = 'inline';
       saveNote.textContent = `تم حفظ التقدّم — آخر حفظ: ${when}`;
+      // حدّث الشارة العلوية
+      setLastSavedHeader(ts);
+      // أخفِ الرسالة المؤقتة بعد 5 ثوانٍ
       if (hideNoteTimer) clearTimeout(hideNoteTimer);
       hideNoteTimer = setTimeout(()=>{ saveNote.style.display='none'; }, SAVE_NOTE_HIDE_MS);
     }
@@ -316,10 +328,9 @@
         updatePills(false);   // لا تشغّل حفظ تلقائي أثناء الاسترجاع
         autoUpdate();
 
-        // عند الفتح: نعرض آخر حفظ إن وُجد (بدون إخفاء تلقائي)
+        // أظهر "آخر حفظ" في الهيدر (ثابت)
         if (state.lastSavedAt){
-          saveNote.style.display = 'inline';
-          saveNote.textContent = `آخر حفظ: ${formatDateTime(state.lastSavedAt)}`;
+          setLastSavedHeader(state.lastSavedAt);
         }
       } finally {
         IS_RESTORING = false;
@@ -443,12 +454,16 @@
       totalLbl.classList.remove('danger','ok');
       advice.innerHTML = '';
 
-      if (t.totalMin <= 360){
-        totalLbl.classList.add('danger');
-        advice.innerHTML = `<div class="danger"><b>تنبيه:</b> ننصحك أن تنام أكثر!</div>`;
-      } else if (t.totalMin >= 420){
+      // منطق النصائح المحدّث:
+      // > 6 ساعات => "نوم العوافي"
+      // < 6 ساعات => ننصح بالنوم أكثر (أسلوب علمي عامي)
+      // = 6 ساعات => محايد (بدون رسالة)
+      if (t.totalMin > 360){
         totalLbl.classList.add('ok');
-        advice.innerHTML = `<div class="ok">نوم العوافي!</div>`;
+        advice.innerHTML = `<div class="ok">نوم العوافي! استمر على عدد الدورات هذا إذا كان جسمك صاحي ومركز.</div>`;
+      } else if (t.totalMin < 360){
+        totalLbl.classList.add('danger');
+        advice.innerHTML = `<div class="danger"><b>ننصحك تنام أكثر:</b> جسمك غالبًا يحتاج على الأقل ٦ ساعات عشان يكمّل دورات نوم كافية ويصلح الطاقة والذاكرة. جرّب تزيد دورة كاملة قبل أو بعد الفجر على حسب جدولك.</div>`;
       }
     }
 
@@ -607,6 +622,7 @@
         nextBtn.onclick = ()=>{
           const isFinal = (tutorialState.mode!=='question') && (tutorialState.step>=learnSlides.length-1 || learnSlides[tutorialState.step].final);
           if (isFinal){
+            const dontShow = document.getElementById('dontShow');
             if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
             closeTutorial();
           } else {
