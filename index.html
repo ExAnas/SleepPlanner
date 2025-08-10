@@ -9,124 +9,54 @@
 
   <style>
     :root{
-      /* ألوان صلبة */
       --bg:#0f1222; --card:#171a2e; --box:#0c0f20;
       --text:#e9ecf1; --muted:#a9b1c7; --accent:#4fd1c5;
       --danger:#eb5757; --ok:#3bb273;
       --radius:14px;
     }
-
     *{box-sizing:border-box}
     html,body{height:100%;margin:0}
     body{
       display:grid; place-items:center;
-      background:var(--bg);
-      color:var(--text);
+      background:var(--bg); color:var(--text);
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Naskh Arabic", "Noto Sans Arabic", Arial, sans-serif;
-      line-height:1.6; padding:24px;
-      font-size:1.1rem;
+      line-height:1.6; padding:24px; font-size:1.1rem;
     }
-
     .container{width:min(1100px,100%)}
-
-    .card{
-      background:var(--card);
-      border:none;
-      border-radius:var(--radius);
-      padding:22px;
-    }
-
+    .card{background:var(--card); border:none; border-radius:var(--radius); padding:22px}
     header{display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:6px}
     .title{font-size:clamp(22px,4vw,30px); font-weight:800}
     .subtitle{color:var(--muted); font-size:1rem}
-
     .grid{display:grid; gap:14px}
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
-
-    .badge{
-      display:inline-flex; align-items:center; gap:6px;
-      background:var(--box);
-      border:none;
-      color:var(--text); padding:8px 12px; border-radius:999px; font-size:13px
-    }
-
-    .section{
-      background:var(--box);
-      border:none;
-      border-radius:12px; padding:16px
-    }
-
+    .badge{display:inline-flex; align-items:center; gap:6px; background:var(--box); border:none; color:var(--text); padding:8px 12px; border-radius:999px; font-size:13px}
+    .section{background:var(--box); border:none; border-radius:12px; padding:16px}
     label{font-weight:700; font-size:1rem}
     input[type="time"], input[type="number"], select{
       background: var(--box); border:none; color:var(--text);
       padding:10px 12px; border-radius:10px; font-family:inherit; font-size:1rem;
     }
-
-    /* الأزرار */
-    .btn-primary{
-      background:var(--accent); border:none;
-      padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:800; font-size:1rem; color:#071b10;
-    }
-    .btn-secondary,.btn-small{
-      background:var(--box); border:none;
-      padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; color:var(--text); font-size:1rem;
-    }
+    .btn-primary{background:var(--accent); border:none; padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:800; font-size:1rem; color:#071b10}
+    .btn-secondary,.btn-small{background:var(--box); border:none; padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:700; color:var(--text); font-size:1rem}
     .btn-small{padding:8px 10px; font-size:0.95rem}
     .btn-primary:active,.btn-secondary:active,.btn-small:active{transform:translateY(1px)}
     .btn-secondary[disabled]{opacity:.5; cursor:not-allowed}
-
-    /* الحبوب */
     .pills{display:flex; gap:8px; flex-wrap:wrap}
-    .pill{
-      user-select:none; background:var(--box); border:none;
-      padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:700; color:#fff;
-      font-size:1rem;
-    }
-    .pill[aria-pressed="true"]{
-      background:rgba(79,209,197,.12);
-      outline:2px solid var(--accent);
-      color:#fff;
-    }
-
+    .pill{user-select:none; background:var(--box); border:none; padding:10px 14px; border-radius:999px; cursor:pointer; font-weight:700; color:#fff; font-size:1rem}
+    .pill[aria-pressed="true"]{background:rgba(79,209,197,.12); outline:2px solid var(--accent); color:#fff}
     .muted{color:var(--muted)}
     .center{display:grid; place-items:center; text-align:center}
-
     .result{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-    .result .box{
-      background: var(--card);
-      border:none;
-      border-radius:12px; padding:14px
-    }
-
+    .result .box{background: var(--card); border:none; border-radius:12px; padding:14px}
     .ok{color:var(--ok)} .danger{color:var(--danger)}
     .hint{font-size:0.95rem; color:var(--muted)}
     .big{font-size:clamp(24px,4vw,32px); font-weight:900}
     .small{font-size:13px}
     @media (max-width:820px){.result{grid-template-columns:1fr}}
-
-    /* صف قبل/بعد الفجر جنب بعض */
     .two-cols{display:flex; gap:16px; align-items:flex-start}
     .two-cols > div{flex:1; min-width:0}
-
-    /* ————— نافذة التعليمات (مكبّرة وديناميكية) ————— */
-    .tutorial-overlay{
-      position:fixed; inset:0;
-      background:rgba(15,18,34,.55);
-      backdrop-filter: blur(10px) saturate(120%);
-      -webkit-backdrop-filter: blur(10px) saturate(120%);
-      display:none; align-items:center; justify-content:center;
-      z-index:9999;
-    }
-    .tutorial{
-      background:var(--card);
-      border:none;
-      border-radius:var(--radius);
-      width:min(900px, 96%);
-      padding:24px 24px 18px 24px;
-      color:var(--text);
-      font-size:1.05rem;
-      line-height:1.7;
-    }
+    .tutorial-overlay{position:fixed; inset:0; background:rgba(15,18,34,.55); backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%); display:none; align-items:center; justify-content:center; z-index:9999}
+    .tutorial{background:var(--card); border:none; border-radius:var(--radius); width:min(900px, 96%); padding:24px 24px 18px 24px; color:var(--text); font-size:1.05rem; line-height:1.7}
     .tutorial h2{margin:0 0 10px 0; font-size:clamp(22px,3.5vw,26px); font-weight:800}
     .tutorial p{margin:0 0 10px 0; color:var(--muted)}
     .tutorial .row-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px}
@@ -135,9 +65,8 @@
   </style>
 </head>
 <body>
-  <!-- نافذة تعليمات ديناميكية -->
   <div id="tutorialOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
-    <div class="tutorial" id="tutorialCard"><!-- يُملأ بالـ JS --></div>
+    <div class="tutorial" id="tutorialCard"></div>
   </div>
 
   <div class="container">
@@ -151,7 +80,7 @@
           <span id="todayBadge" class="badge">اليوم: —</span>
           <span id="tzBadge" class="badge">المنطقة الزمنية: —</span>
           <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
-          <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span> <!-- NEW -->
+          <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span>
         </div>
       </header>
 
@@ -166,7 +95,6 @@
               <span id="autoNote" class="hint" style="display:none;margin-inline-start:8px;max-width:520px"></span>
             </div>
 
-            <!-- اختيار مدة الدورة -->
             <div class="row" style="gap:12px">
               <label for="cycleLength">مدة الدورة (دقائق)</label>
               <select id="cycleLength">
@@ -177,11 +105,10 @@
               <span class="hint">اختر 90 أو 100 أو 110</span>
             </div>
 
-            <!-- NEW: تأخير الاستيقاظ بعد الأذان -->
             <div class="row" style="gap:12px">
               <label for="wakeDelay">تأخير الاستيقاظ بعد الأذان (دقائق)</label>
               <input id="wakeDelay" type="number" min="0" max="180" value="0" style="width:90px"/>
-              <span class="hint">0 = عند الأذان. يمكنك مثلاً 15 أو 30 دقيقة.</span>
+              <span class="hint">0 = عند الأذان. مثلاً 15 أو 30 دقيقة.</span>
             </div>
 
             <div class="row" style="gap:12px">
@@ -189,6 +116,12 @@
               <input id="gapAfter" type="number" min="0" max="120" value="30" style="width:90px"/>
               <span class="hint">مثال: 30 دقيقة للوضوء والأذكار</span>
             </div>
+          </div>
+
+          <!-- SAVE: أزرار الحفظ -->
+          <div class="row" style="justify-content:flex-end; gap:10px; margin-top:10px">
+            <button id="saveBtn" class="btn-primary" type="button">حفظ الإعدادات</button>
+            <span id="saveNote" class="hint" style="display:none"></span>
           </div>
         </div>
 
@@ -236,13 +169,13 @@
 
   <script>
     // ===== Helpers =====
-    let cycleMin = 90; // تتغير حسب الاختيار
+    let cycleMin = 90;
     const todayBadge = document.getElementById('todayBadge');
     const tzBadge = document.getElementById('tzBadge');
     const subtitleEl = document.getElementById('subtitle');
     const cycleBadge = document.getElementById('cycleBadge');
     const footerCycle = document.getElementById('footerCycle');
-    const wakeBadge = document.getElementById('wakeBadge'); // NEW
+    const wakeBadge = document.getElementById('wakeBadge');
 
     function pad(n){return String(n).padStart(2,'0')}
     function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
@@ -292,7 +225,7 @@
     const fajrTime = document.getElementById('fajrTime');
     const gapAfter = document.getElementById('gapAfter');
     const cycleLengthSelect = document.getElementById('cycleLength');
-    const wakeDelay = document.getElementById('wakeDelay'); // NEW
+    const wakeDelay = document.getElementById('wakeDelay');
     const pillsBefore = document.getElementById('pillsBefore');
     const pillsAfter = document.getElementById('pillsAfter');
     const previewBefore = document.getElementById('previewBefore');
@@ -306,7 +239,11 @@
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
 
-    let cBefore = 0; // ابدأ بدون اختيار
+    const saveBtn = document.getElementById('saveBtn');        // SAVE
+    const saveNote = document.getElementById('saveNote');      // SAVE
+    const STORAGE_KEY = 'sleepFajrPrefs.v1';                   // SAVE
+
+    let cBefore = 0;
     let cAfter  = 0;
 
     function renderPills(container, current, onPick){
@@ -329,7 +266,7 @@
 
     function ensureFajrDefault(){ if (!fajrTime.value){ fajrTime.value = '04:15'; } }
 
-    // NEW: احسب وقت الاستيقاظ (أذان الفجر + التأخير)
+    // حساب وقت الاستيقاظ (أذان الفجر + التأخير)
     function getWakeTime(){
       ensureFajrDefault();
       const fajr = makeTodayAt(fajrTime.value || '04:15');
@@ -337,15 +274,14 @@
       return addMin(fajr, delay);
     }
 
-    // —— معاينة مختصرة تُظهر فقط الاختيار الحالي لكل قسم
+    // —— معاينات
     function updatePreviews(){
       ensureFajrDefault();
-      const wake = getWakeTime();                 // NEW
+      const wake = getWakeTime();
       const gap  = Number(gapAfter.value)||0;
 
-      // قبل الفجر
       if (cBefore>0){
-        const start = subMin(wake, cBefore*cycleMin); // NEW: إلى وقت الاستيقاظ
+        const start = subMin(wake, cBefore*cycleMin);
         previewBefore.style.display = 'block';
         previewBefore.textContent = `ستنام من ${fmt(start)} حتى ${fmt(wake)} (${countWithWord(cBefore)}).`;
       } else {
@@ -353,9 +289,8 @@
         previewBefore.textContent = '';
       }
 
-      // بعد الفجر
       if (cAfter>0){
-        const startA = addMin(wake, gap);         // NEW: يبدأ بعد الاستيقاظ + الفاصل
+        const startA = addMin(wake, gap);
         const endA   = addMin(startA, cAfter*cycleMin);
         previewAfter.style.display = 'block';
         previewAfter.textContent = `ستنام من ${fmt(startA)} حتى ${fmt(endA)} (${countWithWord(cAfter)}).`;
@@ -374,16 +309,14 @@
 
     function buildPlan(){
       ensureFajrDefault();
-      const wake = getWakeTime();                 // NEW
+      const wake = getWakeTime();
       const gap  = Number(gapAfter.value)||0;
 
-      // إذا ما فيه ولا دورة: أخف النتائج وارجع
       if (cBefore===0 && cAfter===0){
         results.style.display = 'none';
         return;
       }
 
-      // قبل الفجر (حتى وقت الاستيقاظ)
       let beforeText = '—';
       if (cBefore>0){
         const start = subMin(wake, cBefore*cycleMin);
@@ -392,7 +325,6 @@
         beforeText = 'لا يوجد نوم قبل الفجر';
       }
 
-      // بعد الفجر (من وقت الاستيقاظ + الفاصل)
       let afterText = '—';
       if (cAfter>0){
         const startA = addMin(wake, gap);
@@ -409,20 +341,18 @@
       const t = totalLabel(cBefore, cAfter);
       totalLbl.textContent = t.text;
 
-      // تنسيقات ونصائح
       totalLbl.classList.remove('danger','ok');
       advice.innerHTML = '';
 
-      if (t.totalMin <= 360){ // 6 ساعات أو أقل
+      if (t.totalMin <= 360){
         totalLbl.classList.add('danger');
         advice.innerHTML = `<div class="danger"><b>تنبيه:</b> ننصحك أن تنام أكثر!</div>`;
-      } else if (t.totalMin >= 420){ // 7 ساعات أو أكثر
+      } else if (t.totalMin >= 420){
         totalLbl.classList.add('ok');
         advice.innerHTML = `<div class="ok">نوم العوافي!</div>`;
       }
     }
 
-    // NEW: تحديث شارة "وقت الاستيقاظ"
     function updateWakeBadge(){
       const delay = Number(wakeDelay.value)||0;
       const wake  = getWakeTime();
@@ -430,12 +360,12 @@
     }
 
     function autoUpdate(){
-      updateWakeBadge();   // NEW
+      updateWakeBadge();
       updatePreviews();
       buildPlan();
     }
 
-    // ===== تحديث "اليوم" بالوقت كل ثانية (هجري + وقت محلي) =====
+    // ===== شارة اليوم (هجري + محلي) =====
     function updateTodayBadge(){
       const now = new Date();
       const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
@@ -490,12 +420,64 @@
       if (data){
         const fajr = sanitizeFajr(data.timings?.Fajr);
         if (fajr){
-          fajrTime.value = fajr;
+          fajrTime.value = fajr; // لا نحفظ هذا في التخزين المحلي
           tzBadge.textContent = `المنطقة الزمنية: ${data.meta?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
           autoNote.style.display = 'inline';
           autoNote.textContent = `${sourceNote} (المصدر: Aladhan).`;
-          autoUpdate(); // سيحدّث wakeBadge بناءً على التأخير الحالي
+          autoUpdate();
         }
+      }
+    }
+
+    // ===== الحفظ والاسترجاع (localStorage) =====
+    function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+
+    function getCurrentState(){                                         // SAVE
+      return {
+        cycleLength: Number(cycleLengthSelect.value)||90,
+        wakeDelay: clamp(Number(wakeDelay.value)||0, 0, 180),
+        cBefore: clamp(cBefore, 0, 5),
+        cAfter:  clamp(cAfter,  0, 5),
+        gapAfter: clamp(Number(gapAfter.value)||0, 0, 120)
+        // ملاحظة: لا نحفظ fajrTime
+      };
+    }
+
+    function applyState(state){                                         // SAVE
+      if (!state) return;
+      cycleLengthSelect.value = String(clamp(state.cycleLength||90, 90, 110));
+      wakeDelay.value = String(clamp(state.wakeDelay||0, 0, 180));
+      gapAfter.value = String(clamp(state.gapAfter||0, 0, 120));
+      cBefore = clamp(state.cBefore||0, 0, 5);
+      cAfter  = clamp(state.cAfter||0,  0, 5);
+
+      updateCycleUI();
+      updatePills();
+      autoUpdate();
+    }
+
+    function saveSettings(){                                            // SAVE
+      try{
+        const state = getCurrentState();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        saveNote.style.display = 'inline';
+        saveNote.textContent = 'تم الحفظ! ستُطبَّق الإعدادات تلقائيًا في زيارتك القادمة (عدا وقت الأذان).';
+        setTimeout(()=>{ saveNote.style.display='none'; }, 3500);
+      }catch(e){
+        saveNote.style.display = 'inline';
+        saveNote.textContent = 'تعذّر الحفظ. تحقق من أذونات المتصفح.';
+        setTimeout(()=>{ saveNote.style.display='none'; }, 3500);
+      }
+    }
+
+    function loadSettings(){                                            // SAVE
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        applyState(state);
+      }catch(e){
+        // تجاهل أي خطأ في التحميل
       }
     }
 
@@ -507,45 +489,29 @@
       footerCycle.textContent = `طول الدورة الحالي = ${val} دقيقة.`;
     }
 
-    // ===== Tutorial (Dynamic multi-step) =====
+    // ===== Tutorial =====
     const tutorialOverlay = document.getElementById('tutorialOverlay');
     const tutorialCard    = document.getElementById('tutorialCard');
 
     const learnSlides = [
-      {
-        t: 'وش يعني «دورة نوم»؟',
-        c: `النوم يجي على دورات، والدورة عادة بين <b>٩٠–١١٠ دقيقة</b>.
-            في الدورة الوحدة جسمك يمر بمراحل خفيفة، أعمق، ثم مرحلة الأحلام (REM).
-            أفضل شي تصحى <b>بنهاية</b> دورة، عشان ما تقطع نومك بوسط المرحلة العميقة.`
-      },
-      {
-        t: 'ليه نهتم بمدة الدورة؟',
-        c: `لو قمت بوسط النوم العميق، بتقوم ثقيل. لذلك نخلي التطبيق يبني الخطة حسب مدة الدورة اللي تختارها
-            (٩٠ أو ١٠٠ أو ١١٠ دقيقة) عشان تصحى على نهاية دورة.`
-      },
-      {
-        t: 'كيف نركّبها مع صلاة الفجر؟',
-        c: `نخطّط عدد الدورات <b>قبل</b> الفجر، وممكن نكمّل دورات <b>بعد</b> الصلاة.
-            غيّر مدة الدورة من الإعدادات وبتتحدّث الأوقات تلقائيًا.`
-      },
-      {
-        t: 'التعليمات السريعة',
+      { t: 'وش يعني «دورة نوم»؟',
+        c: `النوم يجي على دورات، والدورة عادة بين <b>٩٠–١١٠ دقيقة</b>...` },
+      { t: 'ليه نهتم بمدة الدورة؟',
+        c: `... (٩٠ أو ١٠٠ أو ١١٠ دقيقة) ...` },
+      { t: 'كيف نركّبها مع صلاة الفجر؟',
+        c: `نخطّط عدد الدورات قبل/بعد الفجر...` },
+      { t: 'التعليمات السريعة',
         c: `<ol style="margin:6px 0 0 0;padding-inline-start:22px">
-              <li><b>وقت الفجر:</b> نحدده تلقائيًا حسب موقعك، وقدر تغيّره يدويًا.</li>
+              <li><b>وقت الفجر:</b> يُجلب تلقائيًا عند الدخول (لا يُحفظ).</li>
               <li><b>مدة الدورة:</b> اختر ٩٠/١٠٠/١١٠ دقيقة.</li>
-              <li><b>تأخير الاستيقاظ:</b> اختَر كم دقيقة بعد الأذان تحب تصحى.</li>
+              <li><b>تأخير الاستيقاظ:</b> كم دقيقة بعد الأذان.</li>
               <li><b>الفاصل بعد الصلاة:</b> أدخل دقائق الوضوء والأذكار.</li>
-              <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر العدد، والخطة تتحدّث فورًا.</li>
-              <li>لو <b>إجمالي النوم ≤ ٦ ساعات</b> بيظهر تنبيه باللون الأحمر.</li>
-            </ol>`,
-        final: true
-      }
+              <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر العدد.</li>
+              <li>اضغط <b>حفظ الإعدادات</b> لتطبيقها تلقائيًا لاحقًا.</li>
+            </ol>`, final: true }
     ];
 
-    const tutorialState = {
-      mode: 'question', // 'question' | 'learn' | 'direct'
-      step: 0
-    };
+    const tutorialState = { mode:'question', step:0 };
 
     function renderTutorial(){
       let html = '';
@@ -579,7 +545,6 @@
 
       tutorialCard.innerHTML = html;
 
-      // wire events
       const dontShow = document.getElementById('dontShow');
       if (dontShow) dontShow.checked = (localStorage.getItem('hideTutorial') === '1');
 
@@ -588,35 +553,16 @@
       const prevBtn = document.getElementById('prevBtn');
       const nextBtn = document.getElementById('nextBtn');
 
-      if (yesBtn){
-        yesBtn.onclick = ()=>{
-          tutorialState.mode = 'direct';
-          // نعرض خطوة "التعليمات السريعة" مباشرة
-          tutorialState.step = learnSlides.findIndex(s=>s.final);
-          if (tutorialState.step < 0) tutorialState.step = learnSlides.length-1;
-          renderTutorial();
-        };
-      }
-      if (noBtn){
-        noBtn.onclick = ()=>{
-          tutorialState.mode = 'learn';
-          tutorialState.step = 0;
-          renderTutorial();
-        };
-      }
-      if (prevBtn){
-        prevBtn.onclick = ()=>{
-          if (tutorialState.step>0){ tutorialState.step--; renderTutorial(); }
-        };
-      }
+      if (yesBtn){ yesBtn.onclick = ()=>{ tutorialState.mode='direct'; tutorialState.step=learnSlides.findIndex(s=>s.final); if(tutorialState.step<0)tutorialState.step=learnSlides.length-1; renderTutorial(); }; }
+      if (noBtn){  noBtn.onclick  = ()=>{ tutorialState.mode='learn'; tutorialState.step=0; renderTutorial(); }; }
+      if (prevBtn){prevBtn.onclick= ()=>{ if (tutorialState.step>0){ tutorialState.step--; renderTutorial(); } }; }
       if (nextBtn){
         nextBtn.onclick = ()=>{
-          const isFinal = (tutorialState.mode !== 'question') &&
-                          (tutorialState.step >= learnSlides.length-1 || learnSlides[tutorialState.step].final);
+          const isFinal = (tutorialState.mode!=='question') && (tutorialState.step>=learnSlides.length-1 || learnSlides[tutorialState.step].final);
           if (isFinal){
             if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
             closeTutorial();
-          }else{
+          } else {
             tutorialState.step = Math.min(learnSlides.length-1, tutorialState.step+1);
             renderTutorial();
           }
@@ -637,29 +583,27 @@
       const dontShow = document.getElementById('dontShow');
       if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
     }
-    // إغلاق بالضغط على الخلفية
     tutorialOverlay.addEventListener('click', (e)=>{ if(e.target === tutorialOverlay) closeTutorial(); });
 
-    // Events (تحديث تلقائي)
+    // Events
     fajrTime.addEventListener('input', autoUpdate);
     gapAfter.addEventListener('input', autoUpdate);
-    wakeDelay.addEventListener('input', autoUpdate); // NEW
+    wakeDelay.addEventListener('input', autoUpdate);
     autoResetBtn.addEventListener('click', setFajrAutomatically);
-    cycleLengthSelect.addEventListener('change', ()=>{
-      updateCycleUI();
-      autoUpdate();
-    });
+    cycleLengthSelect.addEventListener('change', ()=>{ updateCycleUI(); autoUpdate(); });
+    saveBtn.addEventListener('click', saveSettings); // SAVE
 
     // Init
     (function init(){
       updateTodayBadge();
-      setInterval(updateTodayBadge, 1000);   // تحديث التاريخ + الساعة كل ثانية
+      setInterval(updateTodayBadge, 1000);
 
       tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
       updatePills();
-      updateCycleUI();   // ضبط الشارات والفوتر حسب مدة الدورة الحالية
-      autoUpdate();      // إظهار/إخفاء النتائج + تحديث wakeBadge
-      setFajrAutomatically();
+      loadSettings();     // SAVE: حمّل إعدادات المستخدم قبل ضبط الدورة
+      updateCycleUI();
+      autoUpdate();
+      setFajrAutomatically(); // وقت الأذان دائمًا تلقائيًا عند الدخول
       openTutorial();
     })();
   </script>
