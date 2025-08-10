@@ -151,6 +151,7 @@
           <span id="todayBadge" class="badge">اليوم: —</span>
           <span id="tzBadge" class="badge">المنطقة الزمنية: —</span>
           <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
+          <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span> <!-- NEW -->
         </div>
       </header>
 
@@ -174,6 +175,13 @@
                 <option value="110">110 دقيقة</option>
               </select>
               <span class="hint">اختر 90 أو 100 أو 110</span>
+            </div>
+
+            <!-- NEW: تأخير الاستيقاظ بعد الأذان -->
+            <div class="row" style="gap:12px">
+              <label for="wakeDelay">تأخير الاستيقاظ بعد الأذان (دقائق)</label>
+              <input id="wakeDelay" type="number" min="0" max="180" value="0" style="width:90px"/>
+              <span class="hint">0 = عند الأذان. يمكنك مثلاً 15 أو 30 دقيقة.</span>
             </div>
 
             <div class="row" style="gap:12px">
@@ -234,6 +242,7 @@
     const subtitleEl = document.getElementById('subtitle');
     const cycleBadge = document.getElementById('cycleBadge');
     const footerCycle = document.getElementById('footerCycle');
+    const wakeBadge = document.getElementById('wakeBadge'); // NEW
 
     function pad(n){return String(n).padStart(2,'0')}
     function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
@@ -283,6 +292,7 @@
     const fajrTime = document.getElementById('fajrTime');
     const gapAfter = document.getElementById('gapAfter');
     const cycleLengthSelect = document.getElementById('cycleLength');
+    const wakeDelay = document.getElementById('wakeDelay'); // NEW
     const pillsBefore = document.getElementById('pillsBefore');
     const pillsAfter = document.getElementById('pillsAfter');
     const previewBefore = document.getElementById('previewBefore');
@@ -319,17 +329,25 @@
 
     function ensureFajrDefault(){ if (!fajrTime.value){ fajrTime.value = '04:15'; } }
 
+    // NEW: احسب وقت الاستيقاظ (أذان الفجر + التأخير)
+    function getWakeTime(){
+      ensureFajrDefault();
+      const fajr = makeTodayAt(fajrTime.value || '04:15');
+      const delay = Number(wakeDelay.value) || 0;
+      return addMin(fajr, delay);
+    }
+
     // —— معاينة مختصرة تُظهر فقط الاختيار الحالي لكل قسم
     function updatePreviews(){
       ensureFajrDefault();
-      const fajr = makeTodayAt(fajrTime.value || '04:15');
+      const wake = getWakeTime();                 // NEW
       const gap  = Number(gapAfter.value)||0;
 
       // قبل الفجر
       if (cBefore>0){
-        const start = subMin(fajr, cBefore*cycleMin);
+        const start = subMin(wake, cBefore*cycleMin); // NEW: إلى وقت الاستيقاظ
         previewBefore.style.display = 'block';
-        previewBefore.textContent = `ستنام من ${fmt(start)} حتى ${fmt(fajr)} (${countWithWord(cBefore)}).`;
+        previewBefore.textContent = `ستنام من ${fmt(start)} حتى ${fmt(wake)} (${countWithWord(cBefore)}).`;
       } else {
         previewBefore.style.display = 'none';
         previewBefore.textContent = '';
@@ -337,7 +355,7 @@
 
       // بعد الفجر
       if (cAfter>0){
-        const startA = addMin(fajr, gap);
+        const startA = addMin(wake, gap);         // NEW: يبدأ بعد الاستيقاظ + الفاصل
         const endA   = addMin(startA, cAfter*cycleMin);
         previewAfter.style.display = 'block';
         previewAfter.textContent = `ستنام من ${fmt(startA)} حتى ${fmt(endA)} (${countWithWord(cAfter)}).`;
@@ -356,7 +374,7 @@
 
     function buildPlan(){
       ensureFajrDefault();
-      const fajr = makeTodayAt(fajrTime.value || '04:15');
+      const wake = getWakeTime();                 // NEW
       const gap  = Number(gapAfter.value)||0;
 
       // إذا ما فيه ولا دورة: أخف النتائج وارجع
@@ -365,19 +383,19 @@
         return;
       }
 
-      // قبل الفجر
+      // قبل الفجر (حتى وقت الاستيقاظ)
       let beforeText = '—';
       if (cBefore>0){
-        const start = subMin(fajr, cBefore*cycleMin);
-        beforeText = humanSpan(start, fajr) + ` (${countWithWord(cBefore)})`;
+        const start = subMin(wake, cBefore*cycleMin);
+        beforeText = humanSpan(start, wake) + ` (${countWithWord(cBefore)})`;
       } else {
         beforeText = 'لا يوجد نوم قبل الفجر';
       }
 
-      // بعد الفجر
+      // بعد الفجر (من وقت الاستيقاظ + الفاصل)
       let afterText = '—';
       if (cAfter>0){
-        const startA = addMin(fajr, gap);
+        const startA = addMin(wake, gap);
         const endA   = addMin(startA, cAfter*cycleMin);
         afterText = humanSpan(startA, endA) + ` (${countWithWord(cAfter)})`;
       } else {
@@ -404,7 +422,15 @@
       }
     }
 
+    // NEW: تحديث شارة "وقت الاستيقاظ"
+    function updateWakeBadge(){
+      const delay = Number(wakeDelay.value)||0;
+      const wake  = getWakeTime();
+      wakeBadge.textContent = `وقت الاستيقاظ: ${fmt(wake)} ${delay ? `(الأذان + ${delay} دقيقة)` : '(عند الأذان)'}`;
+    }
+
     function autoUpdate(){
+      updateWakeBadge();   // NEW
       updatePreviews();
       buildPlan();
     }
@@ -468,7 +494,7 @@
           tzBadge.textContent = `المنطقة الزمنية: ${data.meta?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
           autoNote.style.display = 'inline';
           autoNote.textContent = `${sourceNote} (المصدر: Aladhan).`;
-          autoUpdate();
+          autoUpdate(); // سيحدّث wakeBadge بناءً على التأخير الحالي
         }
       }
     }
@@ -507,7 +533,8 @@
         c: `<ol style="margin:6px 0 0 0;padding-inline-start:22px">
               <li><b>وقت الفجر:</b> نحدده تلقائيًا حسب موقعك، وقدر تغيّره يدويًا.</li>
               <li><b>مدة الدورة:</b> اختر ٩٠/١٠٠/١١٠ دقيقة.</li>
-              <li><b>الفاصل بعد الصلاة:</b> اختر دقائق الوضوء والأذكار.</li>
+              <li><b>تأخير الاستيقاظ:</b> اختَر كم دقيقة بعد الأذان تحب تصحى.</li>
+              <li><b>الفاصل بعد الصلاة:</b> أدخل دقائق الوضوء والأذكار.</li>
               <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر العدد، والخطة تتحدّث فورًا.</li>
               <li>لو <b>إجمالي النوم ≤ ٦ ساعات</b> بيظهر تنبيه باللون الأحمر.</li>
             </ol>`,
@@ -616,6 +643,7 @@
     // Events (تحديث تلقائي)
     fajrTime.addEventListener('input', autoUpdate);
     gapAfter.addEventListener('input', autoUpdate);
+    wakeDelay.addEventListener('input', autoUpdate); // NEW
     autoResetBtn.addEventListener('click', setFajrAutomatically);
     cycleLengthSelect.addEventListener('change', ()=>{
       updateCycleUI();
@@ -630,7 +658,7 @@
       tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
       updatePills();
       updateCycleUI();   // ضبط الشارات والفوتر حسب مدة الدورة الحالية
-      autoUpdate();      // إظهار/إخفاء النتائج حسب الحالة
+      autoUpdate();      // إظهار/إخفاء النتائج + تحديث wakeBadge
       setFajrAutomatically();
       openTutorial();
     })();
