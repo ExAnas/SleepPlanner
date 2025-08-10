@@ -11,7 +11,7 @@
     :root{
       --bg:#0f1222; --card:#171a2e; --box:#0c0f20;
       --text:#e9ecf1; --muted:#a9b1c7; --accent:#4fd1c5;
-      --danger:#eb5757; --ok:#3bb273; --warn:#e2b93b;
+      --danger:#eb5757; --ok:#3bb273;
       --radius:14px;
     }
     *{box-sizing:border-box}
@@ -57,13 +57,12 @@
     .two-cols > div{flex:1; min-width:0}
 
     /* Overlays */
-    .tutorial-overlay{position:fixed; inset:0; background:rgba(15,18,34,.55); backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%); display:none; align-items:center; justify-content:center; z-index:9999}
-    .tutorial{background:var(--card); border:none; border-radius:var(--radius); width:min(900px, 96%); padding:24px 24px 18px 24px; color:var(--text); font-size:1.05rem; line-height:1.7}
-    .tutorial h2{margin:0 0 10px 0; font-size:clamp(22px,3.5vw,26px); font-weight:800}
-    .tutorial p{margin:0 0 10px 0; color:var(--muted)}
-    .tutorial .row-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px}
-    .tutorial .nav{display:flex; gap:8px}
-    .tutorial .hint{font-size:.95rem; color:var(--muted)}
+    .overlay{position:fixed; inset:0; background:rgba(15,18,34,.55); backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%); display:none; align-items:center; justify-content:center; z-index:9999}
+    .modal{background:var(--card); border:none; border-radius:var(--radius); width:min(900px, 96%); padding:24px 24px 18px 24px; color:var(--text); font-size:1.05rem; line-height:1.7}
+    .modal h2{margin:0 0 10px 0; font-size:clamp(22px,3.5vw,26px); font-weight:800}
+    .modal .row-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px}
+    .modal .nav{display:flex; gap:8px}
+    .modal .hint{font-size:.95rem; color:var(--muted)}
 
     /* مؤشّر حفظ */
     .saving-inline{display:inline-flex; align-items:center; gap:8px}
@@ -76,33 +75,24 @@
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
 
-    /* زر مساعدة دائري صغير */
-    .btn-help{
-      width:28px; height:28px; border-radius:999px; background:var(--accent);
-      color:#071b10; border:none; font-weight:900; cursor:pointer; display:inline-grid; place-items:center; line-height:1; padding:0;
-    }
-    .btn-help:active{transform:translateY(1px)}
+    /* رابط استفهام نصي */
+    .help-link{ color:var(--accent); cursor:pointer; font-weight:900; font-size:1.05rem; line-height:1; }
+    .help-link:active{opacity:.85}
   </style>
 </head>
 <body>
-  <!-- Overlay التوتوريال -->
-  <div id="tutorialOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
-    <div class="tutorial" id="tutorialCard"></div>
-  </div>
-
-  <!-- Overlay معلومات دورة النوم -->
-  <div id="infoOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
-    <div class="tutorial" id="infoCard">
+  <!-- نافذة معلومات دورة النوم -->
+  <div id="infoOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="modal">
       <h2 id="infoTitle">ما هي «دورة النوم» وليه نهتم فيها؟</h2>
       <div class="hint">
-        <p><b>دورة النوم</b> هي مجموعة مراحل تتكرر طول الليل (خفيف → عميق → حركة العين السريعة). مدتها غالبًا بين <b>٩٠–١١٠ دقيقة</b>.</p>
-        <p>القاعدة الذهبية: <b>لا تقطع الدورة في نصّها</b>؛ الأفضل تصحى عند نهايتها عشان تقوم أخف وأنشط.</p>
-        <p>ربطناها مع <b>وقت الفجر</b> عشان تخطط: كم دورة قبل الأذان و/أو بعده (بعد وضوءك وأذكاره) بحيث تجمع نوم كافي وتصحي بنشاط للصلاة.</p>
+        <p><b>دورة النوم</b> هي مراحل تتكرر طول الليل (خفيف → عميق → REM) ومدتها غالبًا بين <b>٩٠–١١٠ دقيقة</b>.</p>
+        <p>الفكرة: حاول تصحى <b>عند نهاية الدورة</b> عشان تقوم أخف وأنشط. لذلك نركّب عدد الدورات قبل/بعد الفجر.</p>
       </div>
       <div class="row-actions">
-        <span class="hint">تقدّر تفتح هالمعلومة من زر (؟) جنب “مدة الدورة”.</span>
+        <span class="hint">تقدّر تفتح هالمعلومة من علامة الاستفهام (؟) بجانب “مدة الدورة”.</span>
         <div class="nav">
-          <button id="infoCloseBtn" class="btn-primary" type="button">فهمت، إغلاق</button>
+          <button id="infoCloseBtn" class="btn-primary" type="button">إغلاق</button>
         </div>
       </div>
     </div>
@@ -121,7 +111,6 @@
           <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
           <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span>
           <span id="sunriseBadge" class="badge">الشروق: —</span>
-          <!-- شارة حالة الحفظ + زر الرجوع -->
           <span id="saveStatusBadge" class="badge" role="status" aria-live="polite">آخر حفظ: —</span>
           <button id="revertBtn" class="btn-small" type="button" title="الرجوع لآخر حفظ">رجوع لآخر حفظ</button>
         </div>
@@ -131,7 +120,7 @@
         <!-- الإعدادات -->
         <div class="section">
           <div class="row" style="justify-content:space-between; gap:16px">
-            <div class="row" style="gap:12px; flex:1">
+            <div class="row" style="gap:8px; align-items:center; flex:1">
               <label for="fajrTime">وقت الفجر</label>
               <input id="fajrTime" type="time" step="60" />
               <button id="autoResetBtn" class="btn-small" type="button" title="إعادة الضبط تلقائيًا">إعادة الضبط تلقائيًا</button>
@@ -140,7 +129,7 @@
 
             <div class="row" style="gap:10px; align-items:center">
               <label for="cycleLength">مدة الدورة (دقائق)</label>
-              <button id="cycleInfoBtn" class="btn-help" type="button" title="معلومات عن دورة النوم">?</button>
+              <span id="cycleInfoLink" class="help-link" title="معلومات عن دورة النوم">؟</span>
               <select id="cycleLength">
                 <option value="90" selected>90 دقيقة</option>
                 <option value="100">100 دقيقة</option>
@@ -148,22 +137,27 @@
               </select>
               <span class="hint">اختر 90 أو 100 أو 110</span>
             </div>
+          </div>
 
-            <div class="row" style="gap:12px">
+          <!-- كبسولات التأخير والفاصل -->
+          <div class="row" style="gap:16px; margin-top:12px; flex-wrap:wrap">
+            <div class="row" style="gap:10px; align-items:center">
               <label for="wakeDelay">تأخير الاستيقاظ بعد الأذان (دقائق)</label>
+              <div id="delayPills" class="pills" aria-label="خيارات التأخير"></div>
               <input id="wakeDelay" type="number" min="0" max="180" value="0" style="width:90px"/>
-              <span class="hint">0 = عند الأذان. مثلاً 15 أو 30 دقيقة.</span>
+              <span class="hint">0 = عند الأذان</span>
             </div>
 
-            <div class="row" style="gap:12px">
+            <div class="row" style="gap:10px; align-items:center">
               <label for="gapAfter">فاصل ما بعد الصلاة (دقائق)</label>
+              <div id="gapPills" class="pills" aria-label="خيارات الفاصل"></div>
               <input id="gapAfter" type="number" min="0" max="120" value="30" style="width:90px"/>
               <span class="hint">مثال: 30 دقيقة للوضوء والأذكار</span>
             </div>
           </div>
         </div>
 
-        <!-- اختيار الدورات + معاينات + اقتراحات -->
+        <!-- اختيار الدورات + معاينات -->
         <div class="section">
           <div class="two-cols">
             <div>
@@ -177,7 +171,6 @@
               <div id="previewAfter" class="hint" style="margin-top:6px; display:none"></div>
             </div>
           </div>
-          <div id="idealHint" class="hint" style="margin-top:10px"></div>
         </div>
 
         <!-- النتائج -->
@@ -246,7 +239,7 @@
       return `${fmt(start)}${startTag} → ${fmt(end)}${endTag}`;
     }
 
-    // ——— عربي بحسب العدد
+    // نصوص عربية بحسب العدد
     function countWithWord(n){
       if (n === 0) return '0 دورات';
       if (n === 1) return 'دورة واحدة';
@@ -255,7 +248,7 @@
     }
     function pillText(n){
       if (n === 0) return 'بدون';
-      if (n === 1) return 'دورة';
+      if (n === 1) return 'دورة واحدة';
       if (n === 2) return 'دورتان';
       return `${n} دورات`;
     }
@@ -266,11 +259,14 @@
       return `${h} ساعة`;
     }
 
-    // ===== UI Setup =====
+    // ===== UI refs =====
     const fajrTime = document.getElementById('fajrTime');
     const gapAfter = document.getElementById('gapAfter');
     const cycleLengthSelect = document.getElementById('cycleLength');
     const wakeDelay = document.getElementById('wakeDelay');
+    const delayPills = document.getElementById('delayPills');
+    const gapPills = document.getElementById('gapPills');
+
     const pillsBefore = document.getElementById('pillsBefore');
     const pillsAfter = document.getElementById('pillsAfter');
     const previewBefore = document.getElementById('previewBefore');
@@ -283,15 +279,13 @@
     const advice = document.getElementById('advice');
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
-    const idealHint = document.getElementById('idealHint');
-    const copyPlanBtn = document.getElementById('copyPlanBtn');
 
-    const STORAGE_KEY = 'sleepFajrPrefs.v2'; // bump version
+    const STORAGE_KEY = 'sleepFajrPrefs.v2';
 
     let cBefore = 0;
     let cAfter  = 0;
 
-    // ===== حفظ تلقائي (مع إصلاحات) =====
+    // ===== حفظ تلقائي =====
     const SAVE_DEBOUNCE_MS = 800;
     let saveTimer = null;
     let IS_RESTORING = false;
@@ -348,6 +342,8 @@
         cAfter  = clamp(state.cAfter||0,  0, 5);
 
         updateCycleUI(false);
+        renderDelayPills();
+        renderGapPills();
         updatePills(false);
         autoUpdate();
 
@@ -357,7 +353,7 @@
       }
     }
 
-    function saveSettings(){ // حفظ فعلي
+    function saveSettings(){
       try{
         const state = getCurrentState();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -374,7 +370,6 @@
       saveTimer = setTimeout(()=>{ saveSettings(); }, SAVE_DEBOUNCE_MS);
     }
 
-    // Flush قبل إغلاق الصفحة إذا في حفظ مؤجّل
     window.addEventListener('beforeunload', ()=>{
       if (saveTimer){
         clearTimeout(saveTimer);
@@ -382,7 +377,8 @@
       }
     });
 
-    function renderPills(container, current, onPick){
+    // ===== توليد الكبسولات =====
+    function renderChoicePills(container, current, makeLabel, onPick){
       container.innerHTML='';
       const options = [0,1,2,3,4,5];
       options.forEach(n=>{
@@ -390,15 +386,38 @@
         b.type = 'button';
         b.className = 'pill';
         b.setAttribute('aria-pressed', String(n===current));
-        b.textContent = pillText(n);
+        b.textContent = makeLabel(n);
         b.onclick = ()=>{ onPick(n) };
         container.appendChild(b);
       });
     }
 
     function updatePills(triggerSave = true){
-      renderPills(pillsBefore, cBefore, (n)=>{ cBefore=n; updatePills(); autoUpdate(); if(triggerSave) scheduleAutoSave(); });
-      renderPills(pillsAfter,  cAfter,  (n)=>{ cAfter=n;  updatePills(); autoUpdate(); if(triggerSave) scheduleAutoSave(); });
+      const wake = getWakeTime();
+      const gap  = Number(gapAfter.value)||0;
+
+      // قبل الفجر: "عدد الدورات — وقت بداية النوم"
+      renderChoicePills(
+        pillsBefore, cBefore,
+        (n)=>{
+          if (n===0) return pillText(0);
+          const start = subMin(wake, n*cycleMin);
+          return `${pillText(n)} — ${fmt(start)}`;
+        },
+        (n)=>{ cBefore=n; updatePills(); autoUpdate(); if(triggerSave) scheduleAutoSave(); }
+      );
+
+      // بعد الفجر: "عدد الدورات — وقت الاستيقاظ"
+      renderChoicePills(
+        pillsAfter, cAfter,
+        (n)=>{
+          if (n===0) return pillText(0);
+          const startA = addMin(wake, gap);
+          const endA   = addMin(startA, n*cycleMin);
+          return `${pillText(n)} — ${fmt(endA)}`;
+        },
+        (n)=>{ cAfter=n; updatePills(); autoUpdate(); if(triggerSave) scheduleAutoSave(); }
+      );
     }
 
     function ensureFajrDefault(){ if (!fajrTime.value){ fajrTime.value = '04:15'; } }
@@ -411,7 +430,7 @@
       return addMin(fajr, delay);
     }
 
-    // —— معاينات
+    // معاينات
     function updatePreviews(){
       ensureFajrDefault();
       const wake = getWakeTime();
@@ -437,55 +456,6 @@
       }
     }
 
-    // —— اقتراحات وقت النوم (قابلة للضغط) + زر زيادة إلى ٦+
-    function renderIdealSuggestions(){
-      idealHint.innerHTML = '';
-      const wrap = document.createElement('div');
-      wrap.className = 'pills';
-      const wake = getWakeTime();
-      const targetCycles = Math.max(1, Math.ceil(360 / cycleMin)); // لتحقيق ٦+ ساعات
-
-      for (let n=1; n<=5; n++){
-        const start = subMin(wake, n*cycleMin);
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'pill';
-        btn.title = `نوم قبل الفجر: ${n} ${n===1?'دورة':'دورات'}`;
-        btn.textContent = `${fmt(start)} • ${n===1?'دورة':(n===2?'دورتان':`${n} دورات`)}`;
-        if (n === targetCycles) btn.setAttribute('aria-pressed', 'true');
-        btn.onclick = ()=>{
-          cBefore = n;
-          updatePills();
-          autoUpdate();
-          scheduleAutoSave();
-        };
-        wrap.appendChild(btn);
-      }
-
-      idealHint.appendChild(document.createTextNode('اقتراحات وقت النوم:'));
-      idealHint.appendChild(wrap);
-
-      // زر زيادة إلى ٦+ ساعات إن لزم
-      const totalMin = (cBefore + cAfter) * cycleMin;
-      if (totalMin < 360){
-        const needCycles = Math.max(0, targetCycles - cBefore);
-        if (needCycles > 0){
-          const boost = document.createElement('button');
-          boost.type = 'button';
-          boost.className = 'btn-small';
-          boost.style.marginInlineStart = '8px';
-          boost.textContent = 'زِد دورة للوصول لـ ٦+ ساعات';
-          boost.onclick = ()=>{
-            cBefore = targetCycles;
-            updatePills();
-            autoUpdate();
-            scheduleAutoSave();
-          };
-          idealHint.appendChild(boost);
-        }
-      }
-    }
-
     function totalLabel(cBefore, cAfter){
       const totalMin = (cBefore + cAfter) * cycleMin;
       const h = Math.floor(totalMin/60), m = totalMin%60;
@@ -500,7 +470,6 @@
 
       if (cBefore===0 && cAfter===0){
         results.style.display = 'none';
-        renderIdealSuggestions();
         return;
       }
 
@@ -534,8 +503,6 @@
       } else if (t.totalMin < 360){
         advice.innerHTML = `<div class="danger"><b>ننصحك تنام أكثر:</b> عادة الجسم يحتاج ٦ ساعات+ عشان يكمل دورات النوم ويصلّح الطاقة والذاكرة. جرّب تزيد دورة قبل أو بعد الفجر حسب جدولك.</div>`;
       }
-
-      renderIdealSuggestions();
     }
 
     function updateWakeBadge(){
@@ -548,9 +515,11 @@
       updateWakeBadge();
       updatePreviews();
       buildPlan();
+      // حدّث تسميات الكبسولات بالوقت المقترح
+      updatePills(false);
     }
 
-    // ===== شارة اليوم (هجري + محلي) =====
+    // شارة اليوم (هجري + محلي)
     function updateTodayBadge(){
       const now = new Date();
       const hijri = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
@@ -560,9 +529,38 @@
       todayBadge.textContent = `اليوم: ${hijri} - ${time}`;
     }
 
-    // ===== جلب وقت الفجر/الشروق تلقائيًا من Aladhan =====
-    function sanitizeTime(str){ const m = (str||'').match(/(\d{1,2}):(\d{2})/); return m ? `${m[1].padStart(2,'0')}:${m[2]}` : ''; }
+    // أزرار مساعدة (التأخير/الفاصل)
+    function renderNumberPills(container, options, getValue, setValue){
+      container.innerHTML = '';
+      options.forEach(v=>{
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pill';
+        b.setAttribute('aria-pressed', String(getValue()===v));
+        b.textContent = String(v);
+        b.onclick = ()=>{
+          setValue(v);
+          // تحديث aria-pressed
+          [...container.children].forEach(ch=>ch.setAttribute('aria-pressed','false'));
+          b.setAttribute('aria-pressed','true');
+          autoUpdate();
+          scheduleAutoSave();
+        };
+        container.appendChild(b);
+      });
+    }
 
+    function renderDelayPills(){
+      const opts = [0,10,15,20,30,45,60];
+      renderNumberPills(delayPills, opts, ()=>Number(wakeDelay.value)||0, (v)=>{wakeDelay.value=String(v)});
+    }
+    function renderGapPills(){
+      const opts = [0,10,15,20,30,45,60];
+      renderNumberPills(gapPills, opts, ()=>Number(gapAfter.value)||0, (v)=>{gapAfter.value=String(v)});
+    }
+
+    // جلب وقت الفجر/الشروق تلقائيًا
+    function sanitizeTime(str){ const m = (str||'').match(/(\d{1,2}):(\d{2})/); return m ? `${m[1].padStart(2,'0')}:${m[2]}` : ''; }
     async function fetchFajrByCoords(lat, lon){
       const url = `https://api.aladhan.com/v1/timings?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&method=4&school=0`;
       const res = await fetch(url); if(!res.ok) throw new Error('HTTP');
@@ -616,123 +614,21 @@
       }
     }
 
-    // ===== Tutorial =====
-    const tutorialOverlay = document.getElementById('tutorialOverlay');
-    const tutorialCard    = document.getElementById('tutorialCard');
-
-    const learnSlides = [
-      { t: 'وش يعني «دورة نوم»؟',
-        c: `النوم يجي على دورات، والدورة عادة بين <b>٩٠–١١٠ دقيقة</b>...` },
-      { t: 'ليه نهتم بمدة الدورة؟',
-        c: `... (٩٠ أو ١٠٠ أو ١١٠ دقيقة) ...` },
-      { t: 'كيف نركّبها مع صلاة الفجر؟',
-        c: `نخطّط عدد الدورات قبل/بعد الفجر...` },
-      { t: 'التعليمات السريعة',
-        c: `<ol style="margin:6px 0 0 0;padding-inline-start:22px">
-              <li><b>وقت الفجر:</b> يُجلب تلقائيًا عند الدخول (لا يُحفظ).</li>
-              <li><b>مدة الدورة:</b> اختر ٩٠/١٠٠/١١٠ دقيقة.</li>
-              <li><b>تأخير الاستيقاظ:</b> كم دقيقة بعد الأذان.</li>
-              <li><b>الفاصل بعد الصلاة:</b> أدخل دقائق الوضوء والأذكار.</li>
-              <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر العدد.</li>
-              <li>لا حاجة لحفظ يدوي — يتم الحفظ تلقائيًا.</li>
-            </ol>`, final: true }
-    ];
-
-    const tutorialState = { mode:'question', step:0 };
-
-    function renderTutorial(){
-      let html = '';
-      if (tutorialState.mode === 'question'){
-        html = `
-          <h2 id="tutorialTitle">يا هلا! تعرف وش تعني «دورة النوم»؟</h2>
-          <p>ودّك نعرّفك عليها بسرعة قبل نبدأ ولا أمورك واضحة؟</p>
-          <div class="row-actions">
-            <label class="small"><input type="checkbox" id="dontShow"> لا تُظهر هذه التعليمات مرة أخرى</label>
-            <div class="nav">
-              <button id="yesBtn"  class="btn-secondary" type="button">نعم، واضح</button>
-              <button id="noBtn"   class="btn-primary"   type="button">لا، علّمني</button>
-            </div>
-          </div>`;
-      } else {
-        const s = learnSlides[tutorialState.step];
-        const isFirst = tutorialState.step === 0;
-        const isFinal = !!s.final || tutorialState.step === learnSlides.length - 1;
-
-        html = `
-          <h2 id="tutorialTitle">${s.t}</h2>
-          <div class="hint">${s.c}</div>
-          <div class="row-actions">
-            <label class="small"><input type="checkbox" id="dontShow"> لا تُظهر هذه التعليمات مرة أخرى</label>
-            <div class="nav">
-              <button id="prevBtn" class="btn-secondary" type="button" ${isFirst?'disabled':''}>السابق</button>
-              <button id="nextBtn" class="btn-primary"   type="button">${isFinal?'ابدأ الآن':'التالي'}</button>
-            </div>
-          </div>`;
-      }
-
-      tutorialCard.innerHTML = html;
-
-      const dontShow = document.getElementById('dontShow');
-      if (dontShow) dontShow.checked = (localStorage.getItem('hideTutorial') === '1');
-
-      const yesBtn  = document.getElementById('yesBtn');
-      const noBtn   = document.getElementById('noBtn');
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-
-      if (yesBtn){ yesBtn.onclick = ()=>{ tutorialState.mode='direct'; tutorialState.step=learnSlides.findIndex(s=>s.final); if(tutorialState.step<0)tutorialState.step=learnSlides.length-1; renderTutorial(); }; }
-      if (noBtn){  noBtn.onclick  = ()=>{ tutorialState.mode='learn'; tutorialState.step=0; renderTutorial(); }; }
-      if (prevBtn){prevBtn.onclick= ()=>{ if (tutorialState.step>0){ tutorialState.step--; renderTutorial(); } }; }
-      if (nextBtn){
-        nextBtn.onclick = ()=>{
-          const isFinal = (tutorialState.mode!=='question') && (tutorialState.step>=learnSlides.length-1 || learnSlides[tutorialState.step].final);
-          if (isFinal){
-            const dontShow = document.getElementById('dontShow');
-            if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
-            closeTutorial();
-          } else {
-            tutorialState.step = Math.min(learnSlides.length-1, tutorialState.step+1);
-            renderTutorial();
-          }
-        };
-      }
-    }
-
-    function openTutorial(){
-      if (localStorage.getItem('hideTutorial') === '1') return;
-      tutorialState.mode = 'question'; tutorialState.step = 0;
-      tutorialOverlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-      renderTutorial();
-    }
-    function closeTutorial(){
-      tutorialOverlay.style.display = 'none';
-      document.body.style.overflow = '';
-      const dontShow = document.getElementById('dontShow');
-      if (dontShow && dontShow.checked) localStorage.setItem('hideTutorial','1');
-    }
-    tutorialOverlay.addEventListener('click', (e)=>{ if(e.target === tutorialOverlay) closeTutorial(); });
-
-    // ===== Info modal (دورة النوم) =====
+    // نافذة المعلومة
     const infoOverlay = document.getElementById('infoOverlay');
-    const cycleInfoBtn = document.getElementById('cycleInfoBtn');
     const infoCloseBtn = document.getElementById('infoCloseBtn');
+    const cycleInfoLink = document.getElementById('cycleInfoLink');
     function openInfo(){ infoOverlay.style.display='flex'; document.body.style.overflow='hidden'; }
     function closeInfo(){ infoOverlay.style.display='none'; document.body.style.overflow=''; }
-    cycleInfoBtn.addEventListener('click', openInfo);
+    cycleInfoLink.addEventListener('click', openInfo);
     infoCloseBtn.addEventListener('click', closeInfo);
     infoOverlay.addEventListener('click', (e)=>{ if(e.target === infoOverlay) closeInfo(); });
 
-    // ===== Events =====
-    fajrTime.addEventListener('input', ()=>{ // وقت الفجر لا يُحفظ
-      autoUpdate();
-      renderIdealSuggestions();
-    });
+    // Events
+    fajrTime.addEventListener('input', ()=>{ autoUpdate(); });
+    gapAfter.addEventListener('input', ()=>{ autoUpdate(); scheduleAutoSave(); renderGapPills(); });
+    wakeDelay.addEventListener('input', ()=>{ autoUpdate(); scheduleAutoSave(); renderDelayPills(); });
 
-    gapAfter.addEventListener('input', ()=>{ autoUpdate(); scheduleAutoSave(); });
-    wakeDelay.addEventListener('input', ()=>{ autoUpdate(); renderIdealSuggestions(); scheduleAutoSave(); });
-
-    // إصلاح حفظ مدة الدورة: listen لكل من input+change + تطبيع القيمة
     function onCycleChange(){
       const val = normalizeCycle(cycleLengthSelect.value);
       if (String(val) !== cycleLengthSelect.value) cycleLengthSelect.value = String(val);
@@ -746,18 +642,18 @@
 
     autoResetBtn.addEventListener('click', setFajrAutomatically);
 
-    revertBtn.addEventListener('click', ()=>{ // رجوع لآخر حفظ
+    revertBtn.addEventListener('click', ()=>{
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw){ setSavedBadge(null); return; }
         const state = JSON.parse(raw);
         applyState(state);
-        // لا نحفظ هنا
       }catch(e){
         setErrorBadge();
       }
     });
 
+    const copyPlanBtn = document.getElementById('copyPlanBtn');
     copyPlanBtn.addEventListener('click', async ()=>{
       const text = [
         `قبل الفجر: ${beforeLine.textContent}`,
@@ -769,7 +665,6 @@
         copyPlanBtn.textContent = 'نُسخت ✅';
         setTimeout(()=>{ copyPlanBtn.textContent = 'نسخ الخطة'; }, 1800);
       }catch{
-        // fallback
         const ta = document.createElement('textarea');
         ta.value = text; document.body.appendChild(ta); ta.select();
         try{ document.execCommand('copy'); }catch{}
@@ -779,7 +674,7 @@
       }
     });
 
-    // ===== الحفظ والاسترجاع (localStorage) =====
+    // الحفظ/التحميل
     function loadSettings(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -791,7 +686,7 @@
       }
     }
 
-    // ===== تغيير مدة الدورة (90/100/110) =====
+    // تحديث شارات مدة الدورة
     function updateCycleUI(triggerSave = true){
       const val = normalizeCycle(cycleLengthSelect.value);
       cycleMin = val;
@@ -800,19 +695,19 @@
       if (triggerSave) scheduleAutoSave();
     }
 
-    // ===== Init =====
+    // Init
     (function init(){
       updateTodayBadge();
       setInterval(updateTodayBadge, 1000);
 
       tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
-      updatePills(false);   // أول مرّة بدون حفظ تلقائي
-      loadSettings();       // حمّل حالة المستخدم (قد تحدّث cycleMin داخل applyState)
+      renderDelayPills();
+      renderGapPills();
+      updatePills(false);
+      loadSettings();
       updateCycleUI(false);
       autoUpdate();
-      renderIdealSuggestions();
       setFajrAutomatically(); // وقت الأذان/الشروق تلقائي
-      openTutorial();
     })();
   </script>
 </body>
