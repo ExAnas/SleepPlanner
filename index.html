@@ -55,6 +55,8 @@
     @media (max-width:820px){.result{grid-template-columns:1fr}}
     .two-cols{display:flex; gap:16px; align-items:flex-start}
     .two-cols > div{flex:1; min-width:0}
+
+    /* Overlays (نفس ستايل التوتوريال لإعادة الاستخدام) */
     .tutorial-overlay{position:fixed; inset:0; background:rgba(15,18,34,.55); backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%); display:none; align-items:center; justify-content:center; z-index:9999}
     .tutorial{background:var(--card); border:none; border-radius:var(--radius); width:min(900px, 96%); padding:24px 24px 18px 24px; color:var(--text); font-size:1.05rem; line-height:1.7}
     .tutorial h2{margin:0 0 10px 0; font-size:clamp(22px,3.5vw,26px); font-weight:800}
@@ -64,9 +66,7 @@
     .tutorial .hint{font-size:.95rem; color:var(--muted)}
 
     /* مؤشر التحميل */
-    .saving-inline{
-      display:inline-flex; align-items:center; gap:8px;
-    }
+    .saving-inline{display:inline-flex; align-items:center; gap:8px}
     .spinner{
       width:14px; height:14px; border-radius:50%;
       border:2px solid var(--accent);
@@ -75,11 +75,37 @@
       animation: spin 0.9s linear infinite;
     }
     @keyframes spin{ to{ transform: rotate(360deg); } }
+
+    /* زر مساعدة دائري صغير */
+    .btn-help{
+      width:28px; height:28px; border-radius:999px; background:var(--accent);
+      color:#071b10; border:none; font-weight:900; cursor:pointer; display:inline-grid; place-items:center; line-height:1; padding:0;
+    }
+    .btn-help:active{transform:translateY(1px)}
   </style>
 </head>
 <body>
+  <!-- Overlay التوتوريال القديم -->
   <div id="tutorialOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
     <div class="tutorial" id="tutorialCard"></div>
+  </div>
+
+  <!-- Overlay معلومات دورة النوم -->
+  <div id="infoOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="infoTitle">
+    <div class="tutorial" id="infoCard">
+      <h2 id="infoTitle">ما هي «دورة النوم» وليه نهتم فيها؟</h2>
+      <div class="hint">
+        <p><b>دورة النوم</b> هي حزمة مراحل تتكرر طول الليل (خفيف → عميق → حركة العين السريعة). مدتها غالبًا بين <b>٩٠–١١٠ دقيقة</b>.</p>
+        <p>الفكرة البسيطة: <b>تصحى آخر الدورة</b> تكون أخف، فتقوم أسهل وأصفى. لو قطعت الدورة في نصّها غالبًا تصحى ثقيل.</p>
+        <p>عشان كذا ربطناها مع <b>وقت الفجر</b>—نخطّط كم دورة <b>قبل</b> الأذان و/أو <b>بعده</b> (بعد الوضوء والأذكار)، بحيث توصل لنوم كفاية وتصحي بنشاط على الصلاة.</p>
+      </div>
+      <div class="row-actions">
+        <span class="hint">تقدّر ترجع لهذي المعلومة بأي وقت من زر (؟) جنب “مدة الدورة”.</span>
+        <div class="nav">
+          <button id="infoCloseBtn" class="btn-primary" type="button">فهمت، إغلاق</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="container">
@@ -94,8 +120,8 @@
           <span id="tzBadge" class="badge">المنطقة الزمنية: —</span>
           <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
           <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span>
-          <!-- آخر حفظ (ثابت في الهيدر) -->
-          <span id="lastSavedHeader" class="subtitle small" style="margin-inline-start:8px">—</span>
+          <!-- شارة حالة الحفظ (في البار) -->
+          <span id="saveStatusBadge" class="badge" role="status" aria-live="polite">آخر حفظ: —</span>
         </div>
       </header>
 
@@ -112,6 +138,8 @@
 
             <div class="row" style="gap:12px">
               <label for="cycleLength">مدة الدورة (دقائق)</label>
+              <!-- زر المساعدة -->
+              <button id="cycleInfoBtn" class="btn-help" type="button" title="معلومات عن دورة النوم">?</button>
               <select id="cycleLength">
                 <option value="90" selected>90 دقيقة</option>
                 <option value="100">100 دقيقة</option>
@@ -132,11 +160,7 @@
               <span class="hint">مثال: 30 دقيقة للوضوء والأذكار</span>
             </div>
           </div>
-
-          <!-- ملاحظة الحفظ التلقائي (تظهر وتختفي) -->
-          <div class="row" style="justify-content:flex-end; gap:10px; margin-top:10px">
-            <span id="saveNote" class="hint" style="display:none"></span>
-          </div>
+          <!-- ما فيه ملاحظة حفظ تحت؛ صارت في البار -->
         </div>
 
         <!-- اختيار الدورات + معاينات اختيارية -->
@@ -190,7 +214,7 @@
     const cycleBadge = document.getElementById('cycleBadge');
     const footerCycle = document.getElementById('footerCycle');
     const wakeBadge = document.getElementById('wakeBadge');
-    const lastSavedHeader = document.getElementById('lastSavedHeader');
+    const saveStatusBadge = document.getElementById('saveStatusBadge');
 
     function pad(n){return String(n).padStart(2,'0')}
     function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
@@ -254,7 +278,6 @@
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
 
-    const saveNote = document.getElementById('saveNote');      // ملاحظة الحفظ (تظهر/تختفي)
     const STORAGE_KEY = 'sleepFajrPrefs.v1';
 
     let cBefore = 0;
@@ -262,9 +285,7 @@
 
     // ===== حفظ تلقائي =====
     const SAVE_DEBOUNCE_MS = 800;
-    const SAVE_NOTE_HIDE_MS = 5000; // 5 ثوانٍ
     let saveTimer = null;
-    let hideNoteTimer = null;
     let IS_RESTORING = false;
 
     function formatDateTime(ts){
@@ -276,28 +297,15 @@
       }catch{ return '—'; }
     }
 
-    function setLastSavedHeader(ts){
-      if (!lastSavedHeader) return;
-      if (!ts){ lastSavedHeader.textContent = '—'; return; }
-      lastSavedHeader.textContent = `آخر حفظ: ${formatDateTime(ts)}`;
+    function setSavingBadge(){
+      saveStatusBadge.innerHTML = `<span class="saving-inline"><i class="spinner" aria-hidden="true"></i><span>جارٍ الحفظ…</span></span>`;
     }
-
-    function showSavingNote(){
-      if (!saveNote) return;
-      if (hideNoteTimer){ clearTimeout(hideNoteTimer); hideNoteTimer = null; }
-      saveNote.style.display = 'inline';
-      saveNote.innerHTML = `<span class="saving-inline"><i class="spinner" aria-hidden="true"></i><span>جارٍ الحفظ…</span></span>`;
+    function setSavedBadge(ts){
+      const when = ts ? formatDateTime(ts) : '—';
+      saveStatusBadge.textContent = `آخر حفظ: ${when}`;
     }
-    function showSavedNote(ts){
-      if (!saveNote) return;
-      const when = ts ? formatDateTime(ts) : '';
-      saveNote.style.display = 'inline';
-      saveNote.textContent = `تم حفظ التقدّم — آخر حفظ: ${when}`;
-      // حدّث الشارة العلوية
-      setLastSavedHeader(ts);
-      // أخفِ الرسالة المؤقتة بعد 5 ثوانٍ
-      if (hideNoteTimer) clearTimeout(hideNoteTimer);
-      hideNoteTimer = setTimeout(()=>{ saveNote.style.display='none'; }, SAVE_NOTE_HIDE_MS);
+    function setErrorBadge(){
+      saveStatusBadge.textContent = 'تعذّر الحفظ (تحقق من الأذونات)';
     }
 
     function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
@@ -325,13 +333,11 @@
         cAfter  = clamp(state.cAfter||0,  0, 5);
 
         updateCycleUI();
-        updatePills(false);   // لا تشغّل حفظ تلقائي أثناء الاسترجاع
+        updatePills(false);
         autoUpdate();
 
-        // أظهر "آخر حفظ" في الهيدر (ثابت)
-        if (state.lastSavedAt){
-          setLastSavedHeader(state.lastSavedAt);
-        }
+        if (state.lastSavedAt) setSavedBadge(state.lastSavedAt);
+        else setSavedBadge(null);
       } finally {
         IS_RESTORING = false;
       }
@@ -341,16 +347,15 @@
       try{
         const state = getCurrentState();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        showSavedNote(state.lastSavedAt);
+        setSavedBadge(state.lastSavedAt);
       }catch(e){
-        saveNote.style.display = 'inline';
-        saveNote.textContent = 'تعذّر الحفظ. تحقق من أذونات المتصفح.';
+        setErrorBadge();
       }
     }
 
     function scheduleAutoSave(){
       if (IS_RESTORING) return;
-      showSavingNote();
+      setSavingBadge();
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = setTimeout(()=>{ saveSettings(); }, SAVE_DEBOUNCE_MS);
     }
@@ -454,16 +459,13 @@
       totalLbl.classList.remove('danger','ok');
       advice.innerHTML = '';
 
-      // منطق النصائح المحدّث:
-      // > 6 ساعات => "نوم العوافي"
-      // < 6 ساعات => ننصح بالنوم أكثر (أسلوب علمي عامي)
-      // = 6 ساعات => محايد (بدون رسالة)
+      // منطق النصائح: > 6 ساعات = عوافي، < 6 = زد نومك، =6 محايد
       if (t.totalMin > 360){
         totalLbl.classList.add('ok');
-        advice.innerHTML = `<div class="ok">نوم العوافي! استمر على عدد الدورات هذا إذا كان جسمك صاحي ومركز.</div>`;
+        advice.innerHTML = `<div class="ok">نوم العوافي! استمر على عدد الدورات هذا إذا حسّيت بنشاط وتركيز.</div>`;
       } else if (t.totalMin < 360){
         totalLbl.classList.add('danger');
-        advice.innerHTML = `<div class="danger"><b>ننصحك تنام أكثر:</b> جسمك غالبًا يحتاج على الأقل ٦ ساعات عشان يكمّل دورات نوم كافية ويصلح الطاقة والذاكرة. جرّب تزيد دورة كاملة قبل أو بعد الفجر على حسب جدولك.</div>`;
+        advice.innerHTML = `<div class="danger"><b>ننصحك تنام أكثر:</b> جسمك عادة يحتاج ٦ ساعات+ عشان يكمّل دورات نوم كافية ويصلّح الطاقة والذاكرة. جرّب تزيد دورة كاملة قبل أو بعد الفجر حسب جدولك.</div>`;
       }
     }
 
@@ -551,7 +553,7 @@
       footerCycle.textContent = `طول الدورة الحالي = ${val} دقيقة.`;
     }
 
-    // ===== Tutorial =====
+    // ===== Tutorial القديم =====
     const tutorialOverlay = document.getElementById('tutorialOverlay');
     const tutorialCard    = document.getElementById('tutorialCard');
 
@@ -648,6 +650,16 @@
     }
     tutorialOverlay.addEventListener('click', (e)=>{ if(e.target === tutorialOverlay) closeTutorial(); });
 
+    // ===== Info modal (دورة النوم) =====
+    const infoOverlay = document.getElementById('infoOverlay');
+    const cycleInfoBtn = document.getElementById('cycleInfoBtn');
+    const infoCloseBtn = document.getElementById('infoCloseBtn');
+    function openInfo(){ infoOverlay.style.display='flex'; document.body.style.overflow='hidden'; }
+    function closeInfo(){ infoOverlay.style.display='none'; document.body.style.overflow=''; }
+    cycleInfoBtn.addEventListener('click', openInfo);
+    infoCloseBtn.addEventListener('click', closeInfo);
+    infoOverlay.addEventListener('click', (e)=>{ if(e.target === infoOverlay) closeInfo(); });
+
     // ===== Events =====
     fajrTime.addEventListener('input', ()=>{ // لا نحفظ عند تغيير وقت الفجر
       autoUpdate();
@@ -662,11 +674,11 @@
     function loadSettings(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
+        if (!raw){ setSavedBadge(null); return; }
         const state = JSON.parse(raw);
         applyState(state);
       }catch(e){
-        // تجاهل أي خطأ في التحميل
+        setSavedBadge(null);
       }
     }
 
