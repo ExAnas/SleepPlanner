@@ -82,16 +82,10 @@
       color:#071b10; border:none; font-weight:900; cursor:pointer; display:inline-grid; place-items:center; line-height:1; padding:0;
     }
     .btn-help:active{transform:translateY(1px)}
-
-    /* مقياس إجمالي النوم */
-    .sleep-meter{display:inline-block; padding:8px 12px; border-radius:999px; font-size:13px}
-    .meter-danger{background: rgba(235,87,87,.12); outline:1px solid rgba(235,87,87,.35)}
-    .meter-warn{background: rgba(226,185,59,.12); outline:1px solid rgba(226,185,59,.40)}
-    .meter-ok{background: rgba(59,178,115,.12); outline:1px solid rgba(59,178,115,.35)}
   </style>
 </head>
 <body>
-  <!-- Overlay التوتوريال القديم -->
+  <!-- Overlay التوتوريال -->
   <div id="tutorialOverlay" class="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
     <div class="tutorial" id="tutorialCard"></div>
   </div>
@@ -127,8 +121,9 @@
           <span id="cycleBadge" class="badge">مدة الدورة: 90 دقيقة</span>
           <span id="wakeBadge" class="badge">وقت الاستيقاظ: —</span>
           <span id="sunriseBadge" class="badge">الشروق: —</span>
-          <!-- شارة حالة الحفظ (في البار) -->
+          <!-- شارة حالة الحفظ + زر الرجوع -->
           <span id="saveStatusBadge" class="badge" role="status" aria-live="polite">آخر حفظ: —</span>
+          <button id="revertBtn" class="btn-small" type="button" title="الرجوع لآخر حفظ">رجوع لآخر حفظ</button>
         </div>
       </header>
 
@@ -168,7 +163,7 @@
           </div>
         </div>
 
-        <!-- اختيار الدورات + معاينات اختيارية -->
+        <!-- اختيار الدورات + معاينات + اقتراحات -->
         <div class="section">
           <div class="two-cols">
             <div>
@@ -189,7 +184,7 @@
         <div id="results" class="section" style="display:none">
           <div class="center" style="margin-bottom:8px">
             <div class="big">خطتك لليلة/صباح الصلاة</div>
-            <div id="totalLabel" class="small sleep-meter">—</div>
+            <div class="small" id="totalLabel">—</div>
           </div>
           <div class="result">
             <div class="box">
@@ -201,7 +196,10 @@
               <div id="afterLine" class="muted">—</div>
             </div>
           </div>
-          <div id="advice" class="center" style="margin-top:10px"></div>
+          <div class="center" style="margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap">
+            <div id="advice"></div>
+            <button id="copyPlanBtn" class="btn-secondary" type="button" title="نسخ الخطة للحافظة">نسخ الخطة</button>
+          </div>
         </div>
       </div>
 
@@ -222,6 +220,7 @@
     const wakeBadge = document.getElementById('wakeBadge');
     const sunriseBadge = document.getElementById('sunriseBadge');
     const saveStatusBadge = document.getElementById('saveStatusBadge');
+    const revertBtn = document.getElementById('revertBtn');
 
     function pad(n){return String(n).padStart(2,'0')}
     function fmt(date){ return pad(date.getHours())+":"+pad(date.getMinutes()) }
@@ -285,13 +284,14 @@
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
     const idealHint = document.getElementById('idealHint');
+    const copyPlanBtn = document.getElementById('copyPlanBtn');
 
-    const STORAGE_KEY = 'sleepFajrPrefs.v1';
+    const STORAGE_KEY = 'sleepFajrPrefs.v2'; // bump version
 
     let cBefore = 0;
     let cAfter  = 0;
 
-    // ===== حفظ تلقائي =====
+    // ===== حفظ تلقائي (مع إصلاحات) =====
     const SAVE_DEBOUNCE_MS = 800;
     let saveTimer = null;
     let IS_RESTORING = false;
@@ -313,14 +313,19 @@
       saveStatusBadge.textContent = `آخر حفظ: ${when}`;
     }
     function setErrorBadge(){
-      saveStatusBadge.textContent = 'تعذّر الحفظ (تحقق من الأذونات)';
+      saveStatusBadge.textContent = 'تعذّر الحفظ (تحقّق من أذونات المتصفح)';
     }
 
     function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
+    function normalizeCycle(val){
+      const allowed = [90,100,110];
+      const n = Number(val)||90;
+      return allowed.includes(n) ? n : 90;
+    }
 
     function getCurrentState(){
       return {
-        cycleLength: Number(cycleLengthSelect.value)||90,
+        cycleLength: normalizeCycle(cycleLengthSelect.value),
         wakeDelay: clamp(Number(wakeDelay.value)||0, 0, 180),
         cBefore: clamp(cBefore, 0, 5),
         cAfter:  clamp(cAfter,  0, 5),
@@ -333,18 +338,20 @@
       if (!state) return;
       IS_RESTORING = true;
       try{
-        cycleLengthSelect.value = String(clamp(state.cycleLength||90, 90, 110));
+        const cyc = normalizeCycle(state.cycleLength);
+        cycleLengthSelect.value = String(cyc);
+        cycleMin = cyc;
+
         wakeDelay.value = String(clamp(state.wakeDelay||0, 0, 180));
         gapAfter.value = String(clamp(state.gapAfter||0, 0, 120));
         cBefore = clamp(state.cBefore||0, 0, 5);
         cAfter  = clamp(state.cAfter||0,  0, 5);
 
-        updateCycleUI();
+        updateCycleUI(false);
         updatePills(false);
         autoUpdate();
 
-        if (state.lastSavedAt) setSavedBadge(state.lastSavedAt);
-        else setSavedBadge(null);
+        setSavedBadge(state.lastSavedAt || null);
       } finally {
         IS_RESTORING = false;
       }
@@ -366,6 +373,14 @@
       if (saveTimer) clearTimeout(saveTimer);
       saveTimer = setTimeout(()=>{ saveSettings(); }, SAVE_DEBOUNCE_MS);
     }
+
+    // Flush قبل إغلاق الصفحة إذا في حفظ مؤجّل
+    window.addEventListener('beforeunload', ()=>{
+      if (saveTimer){
+        clearTimeout(saveTimer);
+        saveSettings();
+      }
+    });
 
     function renderPills(container, current, onPick){
       container.innerHTML='';
@@ -422,18 +437,53 @@
       }
     }
 
-    // —— اقتراحات وقت النوم المثالي
-    function updateIdealHint(){
-      ensureFajrDefault();
+    // —— اقتراحات وقت النوم (قابلة للضغط) + زر زيادة إلى ٦+
+    function renderIdealSuggestions(){
+      idealHint.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'pills';
       const wake = getWakeTime();
-      const opts = [];
       const targetCycles = Math.max(1, Math.ceil(360 / cycleMin)); // لتحقيق ٦+ ساعات
+
       for (let n=1; n<=5; n++){
         const start = subMin(wake, n*cycleMin);
-        const tag = (n===targetCycles) ? ' (مقترح ٦+ ساعات)' : '';
-        opts.push(`${fmt(start)} — ${n===1?'دورة واحدة':(n===2?'دورتان':`${n} دورات`)}${tag}`);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pill';
+        btn.title = `نوم قبل الفجر: ${n} ${n===1?'دورة':'دورات'}`;
+        btn.textContent = `${fmt(start)} • ${n===1?'دورة':(n===2?'دورتان':`${n} دورات`)}`;
+        if (n === targetCycles) btn.setAttribute('aria-pressed', 'true');
+        btn.onclick = ()=>{
+          cBefore = n;
+          updatePills();
+          autoUpdate();
+          scheduleAutoSave();
+        };
+        wrap.appendChild(btn);
       }
-      idealHint.textContent = `اقتراحات وقت النوم: ${opts.join(' • ')}`;
+
+      idealHint.appendChild(document.createTextNode('اقتراحات وقت النوم:'));
+      idealHint.appendChild(wrap);
+
+      // زر زيادة إلى ٦+ ساعات إن لزم
+      const totalMin = (cBefore + cAfter) * cycleMin;
+      if (totalMin < 360){
+        const needCycles = Math.max(0, targetCycles - cBefore);
+        if (needCycles > 0){
+          const boost = document.createElement('button');
+          boost.type = 'button';
+          boost.className = 'btn-small';
+          boost.style.marginInlineStart = '8px';
+          boost.textContent = 'زِد دورة للوصول لـ ٦+ ساعات';
+          boost.onclick = ()=>{
+            cBefore = targetCycles;
+            updatePills();
+            autoUpdate();
+            scheduleAutoSave();
+          };
+          idealHint.appendChild(boost);
+        }
+      }
     }
 
     function totalLabel(cBefore, cAfter){
@@ -443,17 +493,6 @@
       return {text:`إجمالي النوم: ${hoursTxt} (${countWithWord(cBefore + cAfter)})`, totalMin};
     }
 
-    function setMeterClass(el, totalMin){
-      el.classList.remove('meter-danger','meter-warn','meter-ok');
-      if (totalMin < 240){ // أقل من 4 ساعات
-        el.classList.add('meter-danger');
-      } else if (totalMin < 360){ // 4 إلى أقل من 6
-        el.classList.add('meter-warn');
-      } else { // 6 ساعات فأكثر
-        el.classList.add('meter-ok');
-      }
-    }
-
     function buildPlan(){
       ensureFajrDefault();
       const wake = getWakeTime();
@@ -461,7 +500,7 @@
 
       if (cBefore===0 && cAfter===0){
         results.style.display = 'none';
-        updateIdealHint();
+        renderIdealSuggestions();
         return;
       }
 
@@ -488,16 +527,15 @@
 
       const t = totalLabel(cBefore, cAfter);
       totalLbl.textContent = t.text;
-      setMeterClass(totalLbl, t.totalMin);
 
       advice.innerHTML = '';
       if (t.totalMin > 360){
         advice.innerHTML = `<div class="ok">نوم العوافي! استمر إذا تحس بنشاط وتركيز.</div>`;
       } else if (t.totalMin < 360){
-        advice.innerHTML = `<div class="danger"><b>ننصحك تنام أكثر:</b> عادة الجسم يحتاج ٦ ساعات+ عشان يكمل دورات النوم ويصلّح الطاقة والذاكرة. زوّد دورة قبل أو بعد الفجر حسب جدولك.</div>`;
+        advice.innerHTML = `<div class="danger"><b>ننصحك تنام أكثر:</b> عادة الجسم يحتاج ٦ ساعات+ عشان يكمل دورات النوم ويصلّح الطاقة والذاكرة. جرّب تزيد دورة قبل أو بعد الفجر حسب جدولك.</div>`;
       }
 
-      updateIdealHint();
+      renderIdealSuggestions();
     }
 
     function updateWakeBadge(){
@@ -578,7 +616,7 @@
       }
     }
 
-    // ===== Tutorial القديم =====
+    // ===== Tutorial =====
     const tutorialOverlay = document.getElementById('tutorialOverlay');
     const tutorialCard    = document.getElementById('tutorialCard');
 
@@ -688,13 +726,58 @@
     // ===== Events =====
     fajrTime.addEventListener('input', ()=>{ // وقت الفجر لا يُحفظ
       autoUpdate();
-      updateIdealHint();
+      renderIdealSuggestions();
     });
 
     gapAfter.addEventListener('input', ()=>{ autoUpdate(); scheduleAutoSave(); });
-    wakeDelay.addEventListener('input', ()=>{ autoUpdate(); updateIdealHint(); scheduleAutoSave(); });
+    wakeDelay.addEventListener('input', ()=>{ autoUpdate(); renderIdealSuggestions(); scheduleAutoSave(); });
+
+    // إصلاح حفظ مدة الدورة: listen لكل من input+change + تطبيع القيمة
+    function onCycleChange(){
+      const val = normalizeCycle(cycleLengthSelect.value);
+      if (String(val) !== cycleLengthSelect.value) cycleLengthSelect.value = String(val);
+      cycleMin = val;
+      updateCycleUI(false);
+      autoUpdate();
+      scheduleAutoSave();
+    }
+    cycleLengthSelect.addEventListener('input', onCycleChange);
+    cycleLengthSelect.addEventListener('change', onCycleChange);
+
     autoResetBtn.addEventListener('click', setFajrAutomatically);
-    cycleLengthSelect.addEventListener('change', ()=>{ updateCycleUI(); autoUpdate(); updateIdealHint(); scheduleAutoSave(); });
+
+    revertBtn.addEventListener('click', ()=>{ // رجوع لآخر حفظ
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw){ setSavedBadge(null); return; }
+        const state = JSON.parse(raw);
+        applyState(state);
+        // لا نحفظ هنا
+      }catch(e){
+        setErrorBadge();
+      }
+    });
+
+    copyPlanBtn.addEventListener('click', async ()=>{
+      const text = [
+        `قبل الفجر: ${beforeLine.textContent}`,
+        `بعد الفجر: ${afterLine.textContent}`,
+        `${totalLbl.textContent}`
+      ].join('\n');
+      try{
+        await navigator.clipboard.writeText(text);
+        copyPlanBtn.textContent = 'نُسخت ✅';
+        setTimeout(()=>{ copyPlanBtn.textContent = 'نسخ الخطة'; }, 1800);
+      }catch{
+        // fallback
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        try{ document.execCommand('copy'); }catch{}
+        document.body.removeChild(ta);
+        copyPlanBtn.textContent = 'نُسخت ✅';
+        setTimeout(()=>{ copyPlanBtn.textContent = 'نسخ الخطة'; }, 1800);
+      }
+    });
 
     // ===== الحفظ والاسترجاع (localStorage) =====
     function loadSettings(){
@@ -708,6 +791,15 @@
       }
     }
 
+    // ===== تغيير مدة الدورة (90/100/110) =====
+    function updateCycleUI(triggerSave = true){
+      const val = normalizeCycle(cycleLengthSelect.value);
+      cycleMin = val;
+      cycleBadge.textContent = `مدة الدورة: ${val} دقيقة`;
+      footerCycle.textContent = `طول الدورة الحالي = ${val} دقيقة.`;
+      if (triggerSave) scheduleAutoSave();
+    }
+
     // ===== Init =====
     (function init(){
       updateTodayBadge();
@@ -715,10 +807,10 @@
 
       tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
       updatePills(false);   // أول مرّة بدون حفظ تلقائي
-      loadSettings();
-      updateCycleUI();
+      loadSettings();       // حمّل حالة المستخدم (قد تحدّث cycleMin داخل applyState)
+      updateCycleUI(false);
       autoUpdate();
-      updateIdealHint();
+      renderIdealSuggestions();
       setFajrAutomatically(); // وقت الأذان/الشروق تلقائي
       openTutorial();
     })();
