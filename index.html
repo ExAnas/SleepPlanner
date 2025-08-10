@@ -279,6 +279,7 @@
     const advice = document.getElementById('advice');
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
+    const copyPlanBtn = document.getElementById('copyPlanBtn');
 
     const STORAGE_KEY = 'sleepFajrPrefs.v2';
 
@@ -344,7 +345,7 @@
         updateCycleUI(false);
         renderDelayPills();
         renderGapPills();
-        updatePills(false);
+        updatePills(); // لا حفظ أثناء الاسترجاع بسبب IS_RESTORING
         autoUpdate();
 
         setSavedBadge(state.lastSavedAt || null);
@@ -392,7 +393,8 @@
       });
     }
 
-    function updatePills(triggerSave = true){
+    // أهم إصلاح: الحفظ عند ضغط كبسولات قبل/بعد الفجر (دائمًا نحفظ عند الضغط)
+    function updatePills(){
       const wake = getWakeTime();
       const gap  = Number(gapAfter.value)||0;
 
@@ -404,7 +406,7 @@
           const start = subMin(wake, n*cycleMin);
           return `${pillText(n)} — ${fmt(start)}`;
         },
-        (n)=>{ cBefore=n; updatePills(); autoUpdate(); if(triggerSave) scheduleAutoSave(); }
+        (n)=>{ cBefore=n; updatePills(); autoUpdate(); scheduleAutoSave(); }
       );
 
       // بعد الفجر: "عدد الدورات — وقت الاستيقاظ"
@@ -416,7 +418,7 @@
           const endA   = addMin(startA, n*cycleMin);
           return `${pillText(n)} — ${fmt(endA)}`;
         },
-        (n)=>{ cAfter=n; updatePills(); autoUpdate(); if(triggerSave) scheduleAutoSave(); }
+        (n)=>{ cAfter=n; updatePills(); autoUpdate(); scheduleAutoSave(); }
       );
     }
 
@@ -515,8 +517,7 @@
       updateWakeBadge();
       updatePreviews();
       buildPlan();
-      // حدّث تسميات الكبسولات بالوقت المقترح
-      updatePills(false);
+      updatePills(); // إعادة حساب تسميات الكبسولات مع الوقت
     }
 
     // شارة اليوم (هجري + محلي)
@@ -540,7 +541,6 @@
         b.textContent = String(v);
         b.onclick = ()=>{
           setValue(v);
-          // تحديث aria-pressed
           [...container.children].forEach(ch=>ch.setAttribute('aria-pressed','false'));
           b.setAttribute('aria-pressed','true');
           autoUpdate();
@@ -647,13 +647,12 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw){ setSavedBadge(null); return; }
         const state = JSON.parse(raw);
-        applyState(state);
+        applyState(state); // IS_RESTORING يمنع أي حفظ هنا
       }catch(e){
         setErrorBadge();
       }
     });
 
-    const copyPlanBtn = document.getElementById('copyPlanBtn');
     copyPlanBtn.addEventListener('click', async ()=>{
       const text = [
         `قبل الفجر: ${beforeLine.textContent}`,
@@ -703,7 +702,7 @@
       tzBadge.textContent = `المنطقة الزمنية: ${Intl.DateTimeFormat().resolvedOptions().timeZone || '—'}`;
       renderDelayPills();
       renderGapPills();
-      updatePills(false);
+      updatePills();
       loadSettings();
       updateCycleUI(false);
       autoUpdate();
