@@ -62,6 +62,19 @@
     .tutorial .row-actions{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px}
     .tutorial .nav{display:flex; gap:8px}
     .tutorial .hint{font-size:.95rem; color:var(--muted)}
+
+    /* مؤشر التحميل */
+    .saving-inline{
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .spinner{
+      width:14px; height:14px; border-radius:50%;
+      border:2px solid var(--accent);
+      border-top-color: transparent;
+      display:inline-block;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -118,9 +131,8 @@
             </div>
           </div>
 
-          <!-- SAVE: أزرار الحفظ -->
+          <!-- ملاحظة الحفظ التلقائي -->
           <div class="row" style="justify-content:flex-end; gap:10px; margin-top:10px">
-            <button id="saveBtn" class="btn-primary" type="button">حفظ الإعدادات</button>
             <span id="saveNote" class="hint" style="display:none"></span>
           </div>
         </div>
@@ -239,16 +251,17 @@
     const autoNote = document.getElementById('autoNote');
     const autoResetBtn = document.getElementById('autoResetBtn');
 
-    const saveBtn = document.getElementById('saveBtn');        // SAVE
-    const saveNote = document.getElementById('saveNote');      // SAVE
-    const STORAGE_KEY = 'sleepFajrPrefs.v1';                   // SAVE
+    const saveNote = document.getElementById('saveNote');      // ملاحظة الحفظ
+    const STORAGE_KEY = 'sleepFajrPrefs.v1';                   // التخزين المحلي
 
     let cBefore = 0;
     let cAfter  = 0;
 
     // ===== حفظ تلقائي =====
     const SAVE_DEBOUNCE_MS = 800;
+    const SAVE_NOTE_HIDE_MS = 5000; // إخفاء الرسالة بعد 5 ثوانٍ
     let saveTimer = null;
+    let hideNoteTimer = null;
     let IS_RESTORING = false;
 
     function formatDateTime(ts){
@@ -262,19 +275,22 @@
 
     function showSavingNote(){
       if (!saveNote) return;
+      if (hideNoteTimer){ clearTimeout(hideNoteTimer); hideNoteTimer = null; }
       saveNote.style.display = 'inline';
-      saveNote.textContent = 'جارٍ الحفظ…';
+      saveNote.innerHTML = `<span class="saving-inline"><i class="spinner" aria-hidden="true"></i><span>جارٍ الحفظ…</span></span>`;
     }
     function showSavedNote(ts){
       if (!saveNote) return;
-      saveNote.style.display = 'inline';
       const when = ts ? formatDateTime(ts) : '';
+      saveNote.style.display = 'inline';
       saveNote.textContent = `تم حفظ التقدّم — آخر حفظ: ${when}`;
+      if (hideNoteTimer) clearTimeout(hideNoteTimer);
+      hideNoteTimer = setTimeout(()=>{ saveNote.style.display='none'; }, SAVE_NOTE_HIDE_MS);
     }
 
     function clamp(n, min, max){ return Math.max(min, Math.min(max, n)); }
 
-    function getCurrentState(){                                         // SAVE
+    function getCurrentState(){
       return {
         cycleLength: Number(cycleLengthSelect.value)||90,
         wakeDelay: clamp(Number(wakeDelay.value)||0, 0, 180),
@@ -286,7 +302,7 @@
       };
     }
 
-    function applyState(state){                                         // SAVE
+    function applyState(state){
       if (!state) return;
       IS_RESTORING = true;
       try{
@@ -300,13 +316,17 @@
         updatePills(false);   // لا تشغّل حفظ تلقائي أثناء الاسترجاع
         autoUpdate();
 
-        if (state.lastSavedAt) showSavedNote(state.lastSavedAt);
+        // عند الفتح: نعرض آخر حفظ إن وُجد (بدون إخفاء تلقائي)
+        if (state.lastSavedAt){
+          saveNote.style.display = 'inline';
+          saveNote.textContent = `آخر حفظ: ${formatDateTime(state.lastSavedAt)}`;
+        }
       } finally {
         IS_RESTORING = false;
       }
     }
 
-    function saveSettings(){                                            // SAVE (يدوي/تلقائي)
+    function saveSettings(){ // حفظ فعلي
       try{
         const state = getCurrentState();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -534,7 +554,7 @@
               <li><b>تأخير الاستيقاظ:</b> كم دقيقة بعد الأذان.</li>
               <li><b>الفاصل بعد الصلاة:</b> أدخل دقائق الوضوء والأذكار.</li>
               <li><b>عدد الدورات قبل/بعد الفجر:</b> اختر العدد.</li>
-              <li>اضغط <b>حفظ الإعدادات</b> لتطبيقها تلقائيًا لاحقًا.</li>
+              <li>لا حاجة لحفظ يدوي — يتم الحفظ تلقائيًا.</li>
             </ol>`, final: true }
     ];
 
@@ -621,10 +641,9 @@
     wakeDelay.addEventListener('input', ()=>{ autoUpdate(); scheduleAutoSave(); });
     autoResetBtn.addEventListener('click', setFajrAutomatically);
     cycleLengthSelect.addEventListener('change', ()=>{ updateCycleUI(); autoUpdate(); scheduleAutoSave(); });
-    saveBtn.addEventListener('click', ()=>{ showSavingNote(); saveSettings(); }); // SAVE يدوي
 
     // ===== الحفظ والاسترجاع (localStorage) =====
-    function loadSettings(){                                            // SAVE
+    function loadSettings(){
       try{
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return;
